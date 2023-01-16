@@ -3,7 +3,9 @@ package oop.ex6;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.sql.SQLOutput;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -20,7 +22,9 @@ public class Verifier {
     private final HashMap<String, Integer> functions = new HashMap<>();
 
     private static final String IGNORED_LINE_REGEX = "[ \t]*//.*|\\s*";
-    private static final String VARIABLE_TYPE_REGEX = "[ \t]*(?:final)?[ \t]*(?:int|double|char|String|boolean)[ \t]*";
+    private static final String VARIABLE_TYPE_REGEX = "[ \t]*(?:int|double|char|String|boolean)[ \t]*";
+    private static final String FINAL_REGEX = "[ \t]*(?:final)?[ \t]*";
+    public static final String SEPARATOR_REGEX = "[ \t]+";
     private static final String NAME_REGEX = "(?:_\\w+|[a-zA-Z]\\w*)";
     private static final String METHOD_NAME_REGEX = "[ \t]*void(?:[ \t])+[a-zA-Z]+\\w*";
     private static Matcher matcher = null;
@@ -41,12 +45,13 @@ public class Verifier {
         verifyFunctions(bufferedReader);
     }
 
+    //todo pattern,compile is relatively expensive. create a separate class for all patterns
     private void verifyGlobalScope(BufferedReader bufferedReader) throws IOException {
 
         String line;
         while ((line = bufferedReader.readLine()) != null) {
             if (Pattern.compile(IGNORED_LINE_REGEX).matcher(line).matches()) continue;
-            else if (Pattern.compile(VARIABLE_TYPE_REGEX + NAME_REGEX).matcher(line).matches())
+            else if (Pattern.compile(FINAL_REGEX + VARIABLE_TYPE_REGEX + NAME_REGEX).matcher(line).matches())
                 parseVariableLine(line);
             else if (Pattern.compile(METHOD_NAME_REGEX).matcher(line).matches()) parseFunctionLine(line);
             else System.out.println("bad line"); //should throw exception
@@ -60,13 +65,14 @@ public class Verifier {
 
     }
 
-    private boolean parseFunctionLine(String line){
-        System.out.println(line);
-        return true;
+    private void parseFunctionLine(String line) throws IOException{
+        System.out.println("FUNCTION PARSE");
     }
 
-    private boolean parseVariableLine(String line) {
-        System.out.println(line);
-        return true;
+    private void parseVariableLine(String line) throws IOException{
+        List<String> words = Arrays.asList(line.split(SEPARATOR_REGEX));
+        words.removeIf(word -> word.equals("\t"));
+        boolean isFinal = words.get(0).equals("final");
+        for (var word : words) System.out.println("word: " + word);
     }
 }
