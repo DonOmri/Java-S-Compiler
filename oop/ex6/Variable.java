@@ -5,13 +5,15 @@ import java.util.HashSet;
 public class Variable {
     private final String type;
     private final boolean isFinal;
+    private final String name;
     private final HashSet<String> allowedAssignTypes = new HashSet<>();
     private boolean assigned;
 
     //Constructor - called upon declaration of a variable
-    public Variable(String type, boolean isFinal) {
+    public Variable(String type, String name, boolean isFinal) {
         this.isFinal = isFinal;
         this.type = type;
+        this.name = name;
         initAllowedAssignTypes();
     }
 
@@ -96,8 +98,18 @@ public class Variable {
         return this.type;
     }
 
+    public String getName()
+    {
+        return name;
+    }
+
     //getter for assigned
     public boolean wasAssigned() {
         return this.assigned;
+    }
+
+    @Override
+    public String toString() {
+        return "Variable " + name + (isFinal? " (Final)" : " (Not Final)") + " of type " + type;
     }
 }

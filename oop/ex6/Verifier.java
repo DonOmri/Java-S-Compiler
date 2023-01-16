@@ -30,7 +30,6 @@ public class Verifier {
     private static Matcher matcher = null;
 
     public Verifier() {
-
     }
 
     public void verifySjavacFile(String[] args) throws Exception {
@@ -38,23 +37,34 @@ public class Verifier {
         FileReader fileReader = new FileReader(args[0]);
         BufferedReader bufferedReader = new BufferedReader(fileReader);
 
+        scopes.add(new Scope()); //global scope
+
         //1st pass - verify the global scope
         verifyGlobalScope(bufferedReader);
+        System.out.println("DONE");
+        for (var variable : scopes.get(0).variablesMap.entrySet()) System.out.println(variable);
 
         //2nd pass - verify the inside of the functions
         verifyFunctions(bufferedReader);
     }
 
     //todo pattern,compile is relatively expensive. create a separate class for all patterns
+
+    /**
+     * Classify each line as either comment/empty line, variable line, function line or bad line. then calls
+     * to corresponding function to verify the line itself is legal
+     * @param bufferedReader
+     * @throws IOException
+     */
     private void verifyGlobalScope(BufferedReader bufferedReader) throws IOException {
 
         String line;
         while ((line = bufferedReader.readLine()) != null) {
             if (Pattern.compile(IGNORED_LINE_REGEX).matcher(line).matches()) continue;
-            else if (Pattern.compile(FINAL_REGEX + VARIABLE_TYPE_REGEX + NAME_REGEX).matcher(line).matches())
+            else if (Pattern.compile(FINAL_REGEX + VARIABLE_TYPE_REGEX + NAME_REGEX).matcher(line).find())
                 parseVariableLine(line);
             else if (Pattern.compile(METHOD_NAME_REGEX).matcher(line).matches()) parseFunctionLine(line);
-            else System.out.println("bad line"); //should throw exception
+            else System.out.println("bad line: " + line); //should throw exception
         }
     }
 
@@ -72,8 +82,19 @@ public class Verifier {
     private void parseVariableLine(String line) throws IOException{
         List<String> words = Arrays.asList(line.replaceFirst("^\\s+", "").split("\\s+"));
 
-        boolean isFinal = words.get(0).equals("final");
-        for (var word : words) System.out.println("word: " + word);
-        System.out.println("FINISHED LINE");
+        Variable newVariable = words.get(0).equals("final") ?
+                new Variable(words.get(1),words.get(2), true) :
+                new Variable(words.get(0),words.get(1), false);
+
+        if (words.get(0).equals("final")){ //check if final is assigned
+
+            if (words.size() != 5 || !words.get(3).equals("=")) System.out.println("wtf " + line);;
+        }
+
+        scopes.get(scopes.size() - 1).addVariable(newVariable);
+    }
+
+    private boolean isTypeMatchesValue(Variable variable){
+        return true;
     }
 }

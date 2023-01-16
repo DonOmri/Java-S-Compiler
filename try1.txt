@@ -1,6 +1,8 @@
 //variables
-   double _asfg
-   final boolean __
+   double hi = 5
+   final boolean __ = true
+   final char hi 3
+   final char hi =
     String _0
     int int
 int 0sdg34yt
@@ -18,4 +20,5 @@ void 0foo
 void f o o
 void _foo
 
-intint
+//intint
+// hi double hi = 5
