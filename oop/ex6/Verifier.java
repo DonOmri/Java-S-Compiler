@@ -21,12 +21,12 @@ public class Verifier {
     //holds the function names and line number
     private final HashMap<String, Integer> functions = new HashMap<>();
 
-    private static final String IGNORED_LINE_REGEX = "[ \t]*//.*|\\s*";
-    private static final String VARIABLE_TYPE_REGEX = "[ \t]*(?:int|double|char|String|boolean)[ \t]*";
-    private static final String FINAL_REGEX = "[ \t]*(?:final)?[ \t]*";
+    private static final String IGNORED_LINE_REGEX = "[ \\t]*//.*|\\s*";
+    private static final String VARIABLE_TYPE_REGEX = "[ \\t]*(?:int|double|char|String|boolean)[ \\t]*";
+    private static final String FINAL_REGEX = "[ \\t]*(?:final)?[ \\t]*";
     public static final String SEPARATOR_REGEX = "[ \t]+";
     private static final String NAME_REGEX = "(?:_\\w+|[a-zA-Z]\\w*)";
-    private static final String METHOD_NAME_REGEX = "[ \t]*void(?:[ \t])+[a-zA-Z]+\\w*";
+    private static final String METHOD_NAME_REGEX = "[ \\t]*void(?:[ \\t])+[a-zA-Z]+\\w*";
     private static Matcher matcher = null;
 
     public Verifier() {
@@ -70,9 +70,10 @@ public class Verifier {
     }
 
     private void parseVariableLine(String line) throws IOException{
-        List<String> words = Arrays.asList(line.split(SEPARATOR_REGEX));
-        words.removeIf(word -> word.equals("\t"));
+        List<String> words = Arrays.asList(line.replaceFirst("^\\s+", "").split("\\s+"));
+
         boolean isFinal = words.get(0).equals("final");
         for (var word : words) System.out.println("word: " + word);
+        System.out.println("FINISHED LINE");
     }
 }
