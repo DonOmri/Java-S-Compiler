@@ -1,24 +1,27 @@
 //variables
-   double hi = 5
-   final boolean __ = true
-   final char hi 3
-   final char hi =
-    String _0
-    int int
-int 0sdg34yt
-char _
+      int hello =   5, a = 6, b, g= "hello";
+char         goodbye = "hello";
+        boolean zz =52.6;
+    double double= 26.0;
+    String      AAA = "zaza"
+    int hello =   5, a = 6, b, g= "hello"; int hey
+    int hello =   5, a = 6, b, g= "hello"; hello = 5;
+    int hello =   5, a = 6, b, g= "hello"; double a = 5;
+int int int;
+doubledouble;
+boolean
+//final variables
+final int int = 0.00000;
+final int hello =   5, a = 6, b, g= "hello";
+    final   double hello ="hello";
+    final        boolean        bye                 = "=";
+  int final = 5;
+  final final yoyo = 15.2
+    char final zz =;
+final =;
+finalint
+final char =
+final double =;
+final    int    =0.0000;
 
-//functions
-void foo
-void f_o_o
-void int
-    void    double
-void void
-void foo0
-
-void 0foo
-void f o o
-void _foo
-
-//intint
 // hi double hi = 5

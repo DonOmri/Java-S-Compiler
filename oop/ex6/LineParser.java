@@ -2,142 +2,103 @@ package oop.ex6;
 
 import java.util.regex.Pattern;
 
+/**
+ * This class classifies a given to line to a specific type, to later be verified by the verifier class
+ */
 public class LineParser {
 
-    public static final String SEPARATOR_REGEX = "[ \t]+";
-    private static final String IGNORED_LINE_REGEX = "[ \\t]*//.*|\\s*";
-    private static final String VARIABLE_TYPE_REGEX = "[ \\t](?:int|double|char|String|boolean)[ \\t]";
-    private static final String FINAL_REGEX = "[ \\t](?:final)?[ \\t]";
-    private static final String NAME_REGEX = "(?:_\\w+|[a-zA-Z]\\w*)";
-    private static final String METHOD_NAME_REGEX = "[ \\t]void(?:[ \\t])+[a-zA-Z]+\\w";
+    /**generalRegex**/
+    private static final String END_OF_SCOPE = "\\s*}\\s*";
+    private static final String IGNORED_LINE = "\\s*//.*|\\s*";
+    private static final String RETURN = "\\s*return\\s*;\\s*";
+    private static final String END_LINE = ";\\s*";
+
+    /**variableLineRegex**/
+    private static final String FINAL = "\\s*(?:final)?\\s*"; ///todo should be + ??
+    private static final String VARIABLE_TYPE = "\\s*(?:int|double|char|String|boolean)\\s+";
+    private static final String VARIABLE_NAME = "\\s*(?:_\\w+|[a-zA-Z]\\w*)\\s*";
+    private static final String VARIABLE_VALUE = "\\s*\\S+\\s*";
+    private static final String EXTRA_VARIABLES = "\\s*(?:=" + VARIABLE_VALUE + "|,"+ VARIABLE_NAME +")*\\s*";
+
+    /**ifLineRegex**/
+    private static final String IF_START = "^\\s*if\\s*\\(\\s*";
+    private static final String NUMBER = "-?\\d+(.\\d+)?";
+    private static final String IF_CONDITION = "\\s*(" + VARIABLE_NAME + "|true|false|" + NUMBER + ")\\s*";
+    private static final String AND_OR_CONDITION = "\\s*(\\|\\||&&)\\s*";
+    private static final String IF_CONDITIONS = IF_CONDITION + "(" + AND_OR_CONDITION + IF_CONDITION + ")*";
+    private static final String IF_END = "\\s*\\)\\s*\\{\\s*";
+
+    /**whileLineRegex**/
+    private static final String WHILE_START = "^\\s*while\\s*\\(\\s*";
+    private static final String WHILE_CONDITION = IF_CONDITION;
+    private static final String WHILE_CONDITIONS = WHILE_CONDITION + "(" + AND_OR_CONDITION + WHILE_CONDITION + ")*";
+    private static final String WHILE_END = IF_END;
+
+    /**functionDeclarationLineRegex**/ ///todo refactor
+    private static final String FUNCTION_DECLARATION_START = "^\\s*void\\s+([a-zA-Z][a-zA-Z\\d_])\\s\\(";
+    private static final String FUNCTION_DECLARATION_PARAMETER = FINAL + VARIABLE_TYPE + VARIABLE_NAME;
+    private static final String FUNCTION_DECLARATION_PARAMETERS = FUNCTION_DECLARATION_PARAMETER + "([ \t],[ \t]" + FUNCTION_DECLARATION_PARAMETER + "[ \t])";
+    private static final String FUNCTION_DECLARATION_END = "\\)\\s*\\{\\s*$";
+    private static final String FUNCTION_DECLARATION = FUNCTION_DECLARATION_START + FUNCTION_DECLARATION_PARAMETERS + FUNCTION_DECLARATION_END;
+
+    /**functionCallLineRegex**/
+    private static final String FUNCTION_NAME = "\\s*([a-zA-Z][a-zA-Z\\d_]*)\\s*";
+    private static final String FUNCTION_START = FUNCTION_NAME + "\\(\\s*";
+    private static final String FUNCTION_PARAMETER = "\\s*\\S+\\s*";
+    private static final String FUNCTION_PARAMETERS = "(" + FUNCTION_PARAMETER + "([ \t],[ \t]" + FUNCTION_PARAMETER + "[ \t]))?";
+    private static final String FUNCTION_END = "\\s*\\)\\s*;\\s*";
+
+    /**Patterns**/
+    private final Pattern ifLine;
+    private final Pattern whileLine;
+    private final Pattern functionLine;
+    private final Pattern variableLine;
+    private final Pattern ignoredLine;
+    private final Pattern endOfScopeLine;
+    private final Pattern returnLine;
+    private final Pattern functionCallLine;
+
+    //    private static final String start = "^\\s*" + FUNCTION_NAME_REGEX + "\\s*" + "\\(\\s*";
+//    private static final String METHOD_NAME_REGEX = "[ \\t]void(?:[ \\t])+[a-zA-Z]+\\w";
 
     /**
-     * This function validates the structure of an if opening line.
-     *
-     * @param line the given line, unprocessed
-     * @return true if the structure is valid, false otherwise.
+     * Constructor
      */
-    private static boolean validIfLine(String line) {
-        //doesn't check what is the word in the condition, just that the structure is ok
-        String start = "^\\s*if\\s*\\(\\s*";
-        String name = "(?:_\\w+|[a-zA-Z]\\w*)[ \t]*";
-        String number = "-?\\d+(.\\d+)?";
-        String condition = "\\s*(" + name + "|true|false|" + number + ")\\s*";
-        String separator = "\\s*(\\|\\|\\s*|\\s*&&)\\s*";
-        String conditions = condition + "(" + separator + condition + ")*";
-        String end = "\\s*\\)\\s*\\{\\s*";
-        String regex = start + conditions + end;
-        return Pattern.compile(regex).matcher(line).matches();
+    public LineParser(){
+        ifLine = Pattern.compile(IF_START + IF_CONDITIONS + IF_END);
+        whileLine = Pattern.compile(WHILE_START + WHILE_CONDITIONS + WHILE_END);
+        functionLine = Pattern.compile(FUNCTION_DECLARATION);
+        variableLine = Pattern.compile( FINAL + VARIABLE_TYPE + VARIABLE_NAME + EXTRA_VARIABLES + END_LINE);
+        ignoredLine = Pattern.compile(IGNORED_LINE);
+        endOfScopeLine = Pattern.compile(END_OF_SCOPE);
+        returnLine = Pattern.compile(RETURN);
+        functionCallLine = Pattern.compile(FUNCTION_START + FUNCTION_PARAMETERS + FUNCTION_END);
     }
 
+
     /**
-     * This function validates the structure of a comment line.
-     *
+     * All following functions validate a certain type of line (STRUCTURE ONLY)
      * @param line the given line, unprocessed
      * @return true if the structure of the line is valid, false otherwise.
      */
-    private boolean validCommentLine(String line) {
-        return Pattern.compile(IGNORED_LINE_REGEX).matcher(line).matches();
-    }
+    private boolean validIgnoredLine(String line) {return ignoredLine.matcher(line).matches();}
+    private boolean validVariableLine(String line) {return variableLine.matcher(line).matches();}
+    private boolean validIfLine(String line) {return ifLine.matcher(line).matches();}
+    private boolean validWhileLine(String line) {return whileLine.matcher(line).matches();}
+    private boolean validFunctionDeclarationLine(String line) {return functionLine.matcher(line).matches();}
+    private boolean validFunctionCall(String line) {return functionCallLine.matcher(line).matches();}
+    private boolean validReturnLine(String line) {return returnLine.matcher(line).matches();}
+    private boolean validEndOfScope(String line) {return endOfScopeLine.matcher(line).matches();}
 
     /**
-     * This function validates the structure of a function opening line.
-     *
-     * @param line the given line, unprocessed
-     * @return true if the structure of the line is valid, false otherwise.
-     */
-    private boolean validFunctionOpeningLine(String line) {
-//        return Pattern.compile(METHOD_NAME_REGEX).matcher(line).matches();
-
-
-        String until_params_regex = "^\\s*void\\s+([a-zA-Z][a-zA-Z\\d_])\\s\\(";
-        String final_op = "[ \t](?:final +)?[ \t]";
-        String type = "(int|char|String|boolean|double)\\s+";
-        String name = "(?:_\\w+|[a-zA-Z]\\w*)[ \t]*";
-        String param = final_op + type + name;
-        String params = param + "([ \t],[ \t]" + param + "[ \t])";
-        String after_params_regex = "\\)\\s*\\{\\s*$";
-        String regex = until_params_regex + params + after_params_regex;
-        return Pattern.compile(regex).matcher(line).matches();
-    }
-
-    /**
-     * This function validates the structure of a while opening line.
-     *
-     * @param line the given line, unprocessed
-     * @return true if the structure is valid, false otherwise.
-     */
-    private boolean validWhileLine(String line) {
-        //doesn't check what is the word in the condition, just that the structure is ok
-        String start = "^\\s*while\\s*\\(\\s*";
-        String name = "(?:_\\w+|[a-zA-Z]\\w*)[ \t]*";
-        String number = "-?\\d+(.\\d+)?";
-        String condition = "\\s*(" + name + "|true|false|" + number + ")\\s*";
-        String separator = "\\s*(\\|\\|\\s*|\\s*&&)\\s*";
-        String conditions = condition + "(" + separator + condition + ")*";
-        String end = "\\s*\\)\\s*\\{\\s*";
-        String regex = start + conditions + end;
-        return Pattern.compile(regex).matcher(line).matches();
-    }
-
-    /**
-     * This function validates the structure of a variable initialization/declaration line.
-     *
-     * @param line the given line, unprocessed
-     * @return true if the structure is valid, false otherwise.
-     */
-    private boolean validVariableLine(String line) {
-//        return Pattern.compile(FINAL_REGEX + VARIABLE_TYPE_REGEX + NAME_REGEX).matcher(line).find();
-        return Pattern.compile(FINAL_REGEX + VARIABLE_TYPE_REGEX + NAME_REGEX).matcher(line).matches();
-    }
-
-    /**
-     * This function validates the structure of a function call line.
-     *
-     * @param line the given line, unprocessed
-     * @return true if the structure is valid, false otherwise.
-     */
-    private boolean validFunctionCall(String line) {
-        String funcName = "([a-zA-Z][a-zA-Z\\d_]*)";
-        String start = "^\\s*" + funcName + "\\s*" + "\\(\\s*";
-        String param = "\\s*\\S*\\s*";
-        String params = "(" + param + "([ \t],[ \t]" + param + "[ \t]))?";
-        String end = "\\s*\\)\\s*;\\s*";
-        return Pattern.compile(start + params + end).matcher(line).matches();
-    }
-
-    /**
-     * This function validates the structure of a return statement.
-     *
-     * @param line the given line, unprocessed
-     * @return true if the structure is valid, false otherwise.
-     */
-    private boolean validReturnLine(String line) {
-        String regex = "\\s*return\\s*;\\s*";
-        return Pattern.compile(regex).matcher(line).matches();
-    }
-
-    /**
-     * This function validates the structure of a } symbol that stands for end of current scope.
-     *
-     * @param line the given line, unprocessed
-     * @return true if the structure is valid, false otherwise.
-     */
-    private boolean validEndOfScope(String line) {
-        String regex = "\\s*}\\s*";
-        return Pattern.compile(regex).matcher(line).matches();
-    }
-
-    /**
-     * This function returns the type of the line.
-     *
+     * Returns type of line, based on the valid functions above
      * @param line the given line
      * @return LineType which is the type of the line
      */
     public LineType getLineType(String line) {
-        if (validFunctionOpeningLine(line)) {
+        if (validFunctionDeclarationLine(line)) {
             return LineType.FUNCTION;
-        } else if (validCommentLine(line)) {
+        } else if (validIgnoredLine(line)) {
             return LineType.COMMENT;
         } else if (validIfLine(line)) {
             return LineType.IF;

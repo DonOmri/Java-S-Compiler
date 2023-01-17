@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Verifier {
 
@@ -23,16 +25,16 @@ public class Verifier {
      * @throws Exception in case of problems
      */
     public void verifySjavacFile(String file) throws Exception {
-        this.bufferedReader = new BufferedReader(new FileReader(file));
+        this.bufferedReader = new BufferedReader(new FileReader(file)); //throw here exceptions, remember to close
         this.parser = new LineParser();
 
         //1st pass - verifies the global scope
         firstPass();
         System.out.println("DONE");
-        for (var variable : scopes.get(0).variablesMap.entrySet()) System.out.println(variable);
+//        for (var variable : scopes.get(0).variablesMap.entrySet()) System.out.println(variable);
 
         //2nd pass - verifies the internal lines in each function
-        secondPass();
+//        secondPass();
     }
 
     /**
@@ -45,23 +47,24 @@ public class Verifier {
         //add the global scope
         scopes.add(new Scope());
 
-        //start iterating over lines - 1st pass
+        //iterate over lines and create global variables and functions
         String line;
         int lineNumber = 0;
         while ((line = bufferedReader.readLine()) != null) {
             switch (parser.getLineType(line)) {
                 case COMMENT:
+                    System.out.println("comment");
                     break;
                 case VARIABLE:
                     parseVariableLine(line);  // validate the line, and save the variable
                     break;
-                case FUNCTION:
+                case FUNCTION: //todo how the new line is skipped to
                     saveFunctionAndMoveOn(line, lineNumber);  // save the function, move cursor to its end
                     break;
                 default:
                     // global scope must contain only variables or functions
                     System.out.println("bad line: " + line);
-                    verificationFailed();
+//                    verificationFailed();
             }
             lineNumber++;
         }
@@ -75,6 +78,7 @@ public class Verifier {
      * @throws IOException in case there is some issue
      */
     private void saveFunctionAndMoveOn(String line, int startLine) throws IOException {
+        System.out.println("functions");
         // get function name from the line
         // TODO: implement
         String funcName = line;
@@ -185,20 +189,37 @@ public class Verifier {
         System.out.println("FUNCTION PARSE");
     }
 
+    /**
+     * Validates (syntax-wise) a given variable line
+     * @param line a given string represents the line
+     * @throws IOException
+     */
     private void parseVariableLine(String line) throws IOException {
         List<String> words = Arrays.asList(line.replaceFirst("^\\s+", "").split("\\s+"));
+        System.out.println("variable in " + line);
+        boolean isFinal = words.get(0).equals("final");
+//        if (isFinal) words.remove(0); //now can work with the same indexes regardless of final
 
-        Variable newVariable = words.get(0).equals("final") ?
-                new Variable(words.get(1), words.get(2), true) :
-                new Variable(words.get(0), words.get(1), false);
 
-        if (words.get(0).equals("final")) { //check if final is assigned
-
-            if (words.size() != 5 || !words.get(3).equals("=")) System.out.println("wtf " + line);
-            ;
-        }
-
-        scopes.get(scopes.size() - 1).addVariable(newVariable);
+//
+//        //general flow
+//        Pattern legalVariable = Pattern.compile("regex");
+//        Matcher matcher = legalVariable.matcher(line);
+//        while(matcher.find()){
+//            String x = matcher.group();
+//        }
+//
+//        Variable newVariable = words.get(0).equals("final") ?
+//                new Variable(words.get(1), words.get(2), true) :
+//                new Variable(words.get(0), words.get(1), false);
+//
+//        if (words.get(0).equals("final")) { //check if final is assigned
+//
+//            if (words.size() != 5 || !words.get(3).equals("=")) System.out.println("wtf " + line);
+//
+//        }
+//
+//        scopes.get(scopes.size() - 1).addVariable(newVariable);
     }
 
     private boolean isTypeMatchesValue(Variable variable) {
