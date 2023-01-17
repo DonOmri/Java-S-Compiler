@@ -11,7 +11,7 @@ public class Sjavac {
 
         try
         {
-            verifier.verifySjavacFile(args);
+            verifier.verifySjavacFile(args[0]);
             System.out.println(0);
         }
         catch (IOException e)
