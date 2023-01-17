@@ -21,15 +21,16 @@ public class Verifier {
     //holds the function names and line number
     private final HashMap<String, Integer> functions = new HashMap<>();
 
-    private static final String IGNORED_LINE_REGEX = "[ \\t]*//.*|\\s*";
-    private static final String VARIABLE_TYPE_REGEX = "[ \\t]*(?:int|double|char|String|boolean)[ \\t]*";
-    private static final String FINAL_REGEX = "[ \\t]*(?:final)?[ \\t]*";
+    private static final String IGNORED_LINE_REGEX = "[ \\t]//.|\\s*";
+    private static final String VARIABLE_TYPE_REGEX = "[ \\t](?:int|double|char|String|boolean)[ \\t]";
+    private static final String FINAL_REGEX = "[ \\t](?:final)?[ \\t]";
     public static final String SEPARATOR_REGEX = "[ \t]+";
     private static final String NAME_REGEX = "(?:_\\w+|[a-zA-Z]\\w*)";
-    private static final String METHOD_NAME_REGEX = "[ \\t]*void(?:[ \\t])+[a-zA-Z]+\\w*";
+    private static final String METHOD_NAME_REGEX = "[ \\t]void(?:[ \\t])+[a-zA-Z]+\\w";
     private static Matcher matcher = null;
 
     public Verifier() {
+
     }
 
     public void verifySjavacFile(String[] args) throws Exception {
@@ -68,11 +69,181 @@ public class Verifier {
         }
     }
 
+    //TODO: update to throw whatever we want
 
+    /**
+     * This function is called when verification has failed due to syntax or logical problems.
+     * It throws a proper exception.
+     * @throws Exception regarding the issue verification failed
+     */
+    public void verificationFailed() throws Exception{
+        throw new Exception();
+    }
+
+    /**
+     * This function validates the structure of a function opening line.
+     * @param line the given line, unprocessed
+     * @return true if the structure of the line is valid, false otherwise.
+     */
+    private boolean validFunctionOpeningLine(String line){
+        String until_params_regex = "^\\s*void\\s+([a-zA-Z][a-zA-Z\\d_])\\s\\(";
+        String final_op =  "[ \t](?:final +)?[ \t]";
+        String type = "(int|char|String|boolean|double)\\s+";
+        String name = "(?:_\\w+|[a-zA-Z]\\w*)[ \t]*";
+        String param = final_op + type + name;
+        String params = param + "([ \t],[ \t]" + param + "[ \t])";
+        String after_params_regex = "\\)\\s*\\{\\s*$";
+        String regex = until_params_regex + params + after_params_regex;
+        return Pattern.compile(regex).matcher(line).matches();
+    }
+
+    /**
+     * This function validates the structure of an if opening line.
+     * @param line the given line, unprocessed
+     * @return true if the structure is valid, false otherwise.
+     */
+    private static boolean validIfLine(String line){
+        //doesn't check what is the word in the condition, just that the structure is ok
+        String start = "^\\s*if\\s*\\(\\s*";
+        String name = "(?:_\\w+|[a-zA-Z]\\w*)[ \t]*";
+        String number = "-?\\d+(.\\d+)?";
+        String condition = "\\s*(" + name + "|true|false|" + number + ")\\s*";
+        String separator = "\\s*(\\|\\|\\s*|\\s*&&)\\s*";
+        String conditions = condition + "(" + separator + condition + ")*";
+        String end = "\\s*\\)\\s*\\{\\s*";
+        String regex = start + conditions + end;
+        return Pattern.compile(regex).matcher(line).matches();
+    }
+
+    /**
+     * This function validates the structure of a while opening line.
+     * @param line the given line, unprocessed
+     * @return true if the structure is valid, false otherwise.
+     */
+    private boolean validWhileLine(String line){
+        //doesn't check what is the word in the condition, just that the structure is ok
+        String start = "^\\s*while\\s*\\(\\s*";
+        String name = "(?:_\\w+|[a-zA-Z]\\w*)[ \t]*";
+        String number = "-?\\d+(.\\d+)?";
+        String condition = "\\s*(" + name + "|true|false|" + number + ")\\s*";
+        String separator = "\\s*(\\|\\|\\s*|\\s*&&)\\s*";
+        String conditions = condition + "(" + separator + condition + ")*";
+        String end = "\\s*\\)\\s*\\{\\s*";
+        String regex = start + conditions + end;
+        return Pattern.compile(regex).matcher(line).matches();
+    }
+
+    /**
+     * This function validates the structure of a variable initialization/declaration line.
+     * @param line the given line, unprocessed
+     * @return true if the structure is valid, false otherwise.
+     */
+    private boolean validVariableLine(String line){
+        return Pattern.compile(FINAL_REGEX + VARIABLE_TYPE_REGEX + NAME_REGEX).matcher(line).matches();
+    }
+
+    /**
+     * This function validates the structure of a function call line.
+     * @param line the given line, unprocessed
+     * @return true if the structure is valid, false otherwise.
+     */
+    private boolean validFunctionCall(String line){
+        String funcName = "([a-zA-Z][a-zA-Z\\d_]*)";
+        String start = "^\\s*" + funcName + "\\s*" + "\\(\\s*";
+        String param = "\\s*\\S*\\s*";
+        String params = "(" + param + "([ \t],[ \t]" + param + "[ \t]))?";
+        String end = "\\s*\\)\\s*;\\s*";
+        return Pattern.compile(start + params + end).matcher(line).matches();
+    }
+
+    /**
+     * This function validates the structure of a return statement.
+     * @param line the given line, unprocessed
+     * @return true if the structure is valid, false otherwise.
+     */
+    private boolean validReturnLine(String line){
+        String regex = "\\s*return\\s*;\\s*";
+        return Pattern.compile(regex).matcher(line).matches();
+    }
+
+    /**
+     * This function validates the structure of a } symbol that stands for end of current scope.
+     * @param line the given line, unprocessed
+     * @return true if the structure is valid, false otherwise.
+     */
+    private boolean validEndOfScope(String line){
+        String regex = "\\s*}\\s*";
+        return Pattern.compile(regex).matcher(line).matches();
+    }
+
+    /**
+     * This function iterates through all the functions found in the 1st pass, one by one, and for each function
+     * validates all the internal lines of the function.
+     * @param bufferedReader the reader
+     * @throws Exception throws a proper agreed upon exception if validation fails for some reason.
+     */
     private void verifyFunctions(BufferedReader bufferedReader) throws Exception {
         //iterate over functions that were saved in the 1st pass
-        //for each function, add a new scope to the ArrayList, and verify it.
+        for (HashMap.Entry<String, Integer> entry : functions.entrySet()) {
+            String funcName = entry.getKey();
+            Integer startLine = entry.getValue();
 
+            //iterate from start of the function
+            for (int i = 0; i < startLine; ++i)
+                bufferedReader.readLine();
+            String line;
+            int line_num = 0;
+            int last_return_line_num = -1;
+            int numScopes = 0;
+            while ((line = bufferedReader.readLine()) != null) {
+                if(validFunctionOpeningLine(line)){
+                    //add a new scope to the linked list
+                    scopes.add(new Scope());
+                    numScopes++;
+
+                    //add parameters as local variables in the scope
+                    //init variables - final or not, with type and name
+                }
+                else if(validIfLine(line)){
+                    // if - opens a new scope
+                    scopes.add(new Scope());
+                    numScopes++;
+                }
+                else if(validWhileLine(line)){
+                    // while - opens a new scope
+                    scopes.add(new Scope());
+                    numScopes++;
+                }
+                else if(validVariableLine(line)){
+                    // variable - parsed just like global, but added to the last scope in the linked list
+                    // for assignment, check that the variable exists, and that the assignment succeeds
+                }
+                else if(validFunctionCall(line)){
+                    // function call - method name exists, params should be - good types, initialized, same number
+                }
+                else if (validReturnLine(line)) {
+                    // return
+                    last_return_line_num = line_num;
+                }
+                else if (validEndOfScope(line)){
+                    //delete the last scope from the linked list of scopes
+                    scopes.remove(scopes.size()-1);
+                    --numScopes;
+
+                    //check if this was the closing } of the function scope
+                    if(numScopes == 0){
+                        //verify that last line was a valid 'return;' statement
+                        if(last_return_line_num != line_num - 1){
+                            // verification failed
+                            verificationFailed();
+                        }
+                        //if at this point no exception was thrown, we break out of the loop and the function is verified.
+                        break;
+                    }
+                }
+                line_num++;
+            }
+        }
     }
 
     private void parseFunctionLine(String line) throws IOException{
