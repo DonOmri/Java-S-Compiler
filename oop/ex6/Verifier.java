@@ -8,7 +8,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class Verifier {
 
@@ -38,8 +37,8 @@ public class Verifier {
     }
 
     /**
-     * Classify each line as either comment/empty line, variable line, function line or bad line. then calls
-     * to corresponding function to verify the line itself is legal
+     * Classifies each line as either comment/empty line, variable line, function line or bad line.
+     * then calls corresponding function to verify the line itself is legal
      *
      * @throws IOException upon IO failure
      */
@@ -51,12 +50,12 @@ public class Verifier {
         String line;
         int lineNumber = 0;
         while ((line = bufferedReader.readLine()) != null) {
-            switch (parser.getLineType(line)) {
+            switch (parser.parseLineType(line)) {
                 case COMMENT:
                     System.out.println("comment");
                     break;
                 case VARIABLE:
-                    parseVariableLine(line);  // validate the line, and save the variable
+                    extractVariables(line);  // validate the line, and save the variable
                     break;
                 case FUNCTION: //todo how the new line is skipped to
                     saveFunctionAndMoveOn(line, lineNumber);  // save the function, move cursor to its end
@@ -89,7 +88,7 @@ public class Verifier {
         // move cursor to the next line right after the function
         int numScopes = 0;
         while ((line = bufferedReader.readLine()) != null) {
-            switch (parser.getLineType(line)) {
+            switch (parser.parseLineType(line)) {
                 case IF:
                 case WHILE:
                     numScopes++;
@@ -138,7 +137,7 @@ public class Verifier {
             int lineNum = 1;
             int lastReturnLineNum = -1;
             while ((line = bufferedReader.readLine()) != null) {
-                switch (parser.getLineType(line)) {
+                switch (parser.parseLineType(line)) {
                     case COMMENT:
                         break;
                     case IF:
@@ -147,7 +146,7 @@ public class Verifier {
                         numScopes++;
                         break;
                     case VARIABLE:
-                        parseVariableLine(line);
+                        extractVariables(line);
                         break;
                     case FUNCTION_CALL:
                         parseFunctionCall(line);
@@ -194,31 +193,33 @@ public class Verifier {
      * @param line a given string represents the line
      * @throws IOException
      */
-    private void parseVariableLine(String line) throws IOException {
-        List<String> words = Arrays.asList(line.replaceFirst("^\\s+", "").split("\\s+"));
-        System.out.println("variable in " + line);
-        boolean isFinal = words.get(0).equals("final");
-//        if (isFinal) words.remove(0); //now can work with the same indexes regardless of final
+    private void extractVariables(String line) throws IOException {
+        System.out.println(line);
+        boolean isFinal = false;
+        String type = "";
+        //final and type
+        Matcher isFinalAndTypeMatcher = parser.getFinalAndTypePattern().matcher(line);
+        if(isFinalAndTypeMatcher.find()) {
+            String[] isFinalAndType = isFinalAndTypeMatcher.group().replaceFirst("^\\s+", "").split("\\s+");
+            isFinal = isFinalAndType.length == 2;
+            type = isFinalAndType.length == 2 ? isFinalAndType[1] : isFinalAndType[0];
+        }
 
+        System.out.println("type: " + type + ". is final? " + isFinal);
+        //get all variables
+        //todo problem with first word
+        //todo problem with only declaring
+        Matcher variableMatcher = parser.getVariablesPattern().matcher(line);
+        while(variableMatcher.find()) {
+            String[] possibleVariable = variableMatcher.group().replaceFirst("^\\s+", "").replaceAll("[=,]"," ").split("\\s+");
+            for(var word : possibleVariable) System.out.println(word);
+            System.out.println("DONE WITH VAR");
+        }
+        //flow
+        //as long as the matcher find a legal variable:
+        //validate final vs assignment
+        //validate declared type vs actual value
 
-//
-//        //general flow
-//        Pattern legalVariable = Pattern.compile("regex");
-//        Matcher matcher = legalVariable.matcher(line);
-//        while(matcher.find()){
-//            String x = matcher.group();
-//        }
-//
-//        Variable newVariable = words.get(0).equals("final") ?
-//                new Variable(words.get(1), words.get(2), true) :
-//                new Variable(words.get(0), words.get(1), false);
-//
-//        if (words.get(0).equals("final")) { //check if final is assigned
-//
-//            if (words.size() != 5 || !words.get(3).equals("=")) System.out.println("wtf " + line);
-//
-//        }
-//
 //        scopes.get(scopes.size() - 1).addVariable(newVariable);
     }
 

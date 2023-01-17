@@ -6,6 +6,8 @@ import java.util.regex.Pattern;
  * This class classifies a given to line to a specific type, to later be verified by the verifier class
  */
 public class LineParser {
+    //todo: use possessives (video 4)
+    //todo: increase efficiency by using ^ to search in the start of the string (relevant for any line type)
 
     /**generalRegex**/
     private static final String END_OF_SCOPE = "\\s*}\\s*";
@@ -58,6 +60,9 @@ public class LineParser {
     private final Pattern returnLine;
     private final Pattern functionCallLine;
 
+    private final Pattern variablesPattern;
+    private final Pattern finalAndTypePattern;
+
     //    private static final String start = "^\\s*" + FUNCTION_NAME_REGEX + "\\s*" + "\\(\\s*";
 //    private static final String METHOD_NAME_REGEX = "[ \\t]void(?:[ \\t])+[a-zA-Z]+\\w";
 
@@ -73,6 +78,10 @@ public class LineParser {
         endOfScopeLine = Pattern.compile(END_OF_SCOPE);
         returnLine = Pattern.compile(RETURN);
         functionCallLine = Pattern.compile(FUNCTION_START + FUNCTION_PARAMETERS + FUNCTION_END);
+
+
+        variablesPattern = Pattern.compile( VARIABLE_NAME + EXTRA_VARIABLES);
+        finalAndTypePattern = Pattern.compile("(" + FINAL + ")" + "(" + VARIABLE_TYPE +")");
     }
 
 
@@ -95,7 +104,7 @@ public class LineParser {
      * @param line the given line
      * @return LineType which is the type of the line
      */
-    public LineType getLineType(String line) {
+    public LineType parseLineType(String line) {
         if (validFunctionDeclarationLine(line)) {
             return LineType.FUNCTION;
         } else if (validIgnoredLine(line)) {
@@ -116,5 +125,11 @@ public class LineParser {
             return LineType.UNRECOGNIZED;
         }
     }
+
+
+    /**WORKING ZONE**/
+
+    public Pattern getFinalAndTypePattern() {return finalAndTypePattern;}
+    public Pattern getVariablesPattern() {return variablesPattern;}
 
 }
