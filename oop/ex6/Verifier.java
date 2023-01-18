@@ -29,8 +29,10 @@ public class Verifier {
 
         //1st pass - verifies the global scope
         firstPass();
-        System.out.println("DONE");
-//        for (var variable : scopes.get(0).variablesMap.entrySet()) System.out.println(variable);
+        System.out.println("\n****************************************");
+        System.out.println("        verifySjavacFile is DONE"          );
+        System.out.println("****************************************\n");
+        for (var variable : scopes.get(0).variablesMap.entrySet()) System.out.println(variable);
 
         //2nd pass - verifies the internal lines in each function
 //        secondPass();
@@ -189,41 +191,50 @@ public class Verifier {
     }
 
     /**
-     * Validates (syntax-wise) a given variable line
-     * @param line a given string represents the line
-     * @throws IOException
+     *
+     * @param line a syntax-wise validated line
+     * @throws IOException if a final variable wasn't assigned or a value don't match declared variable type
      */
-    private void extractVariables(String line) throws IOException {
-        System.out.println(line);
+    private void extractVariables(String line) throws IOException { //todo currently dont throw exceptions, printerr instead
         boolean isFinal = false;
         String type = "";
         //final and type
         Matcher isFinalAndTypeMatcher = parser.getFinalAndTypePattern().matcher(line);
         if(isFinalAndTypeMatcher.find()) {
             String[] isFinalAndType = isFinalAndTypeMatcher.group().replaceFirst("^\\s+", "").split("\\s+");
-            isFinal = isFinalAndType.length == 2;
-            type = isFinalAndType.length == 2 ? isFinalAndType[1] : isFinalAndType[0];
+            isFinal = isFinalAndType[0].equals("final");
+            type = isFinal ? isFinalAndType[1] : isFinalAndType[0];
         }
 
-        System.out.println("type: " + type + ". is final? " + isFinal);
-        //get all variables
-        //todo problem with first word
-        //todo problem with only declaring
-        Matcher variableMatcher = parser.getVariablesPattern().matcher(line);
-        while(variableMatcher.find()) {
-            String[] possibleVariable = variableMatcher.group().replaceFirst("^\\s+", "").replaceAll("[=,]"," ").split("\\s+");
-            for(var word : possibleVariable) System.out.println(word);
-            System.out.println("DONE WITH VAR");
-        }
-        //flow
-        //as long as the matcher find a legal variable:
-        //validate final vs assignment
-        //validate declared type vs actual value
+        String variablesAsString = line.substring(isFinalAndTypeMatcher.end());
+        System.out.println(variablesAsString);
 
-//        scopes.get(scopes.size() - 1).addVariable(newVariable);
+        Matcher variableMatcher = parser.getVariablesPattern().matcher(variablesAsString);
+
+        //as long as you've found a correct syntax of a variable
+        while(variableMatcher.find()){
+            //split it to crucial parts, and remove everything else
+            String[] varFragments = variableMatcher.group().replaceFirst("^\\s*","").
+                    replaceAll("[,;=\\s]+"," ").split("\\s+");
+
+            if(varFragments.length > 0) for (var word : varFragments) System.out.println(word);
+
+            //if there was only one parts - no assignment occurred
+            if(varFragments.length == 1){
+                if(isFinal) System.err.println("err - final wasn't assigned");
+                else scopes.get(scopes.size() - 1).addVariable(new Variable(type, varFragments[0], false));
+            }
+            //assignment occurred - compare type and value
+            else if (varFragments.length == 2){
+                if(!compareTypeAndValue(type, varFragments[1])) System.err.println("err  - type and value don't match");
+                else scopes.get(scopes.size() - 1).addVariable(new Variable(type, varFragments[0], isFinal));
+            }
+            else System.out.println("SOMETHING WEIRD HAPPENED");
+        }
     }
 
-    private boolean isTypeMatchesValue(Variable variable) {
+    private boolean compareTypeAndValue(String type, String value) { //todo
+
         return true;
     }
 }

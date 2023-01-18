@@ -110,6 +110,6 @@ public class Variable {
 
     @Override
     public String toString() {
-        return "Variable " + name + (isFinal? " (Final)" : " (Not Final)") + " of type " + type;
+        return " " +type + " Variable"  + (isFinal? " (Final)" : " (Not Final)");
     }
 }

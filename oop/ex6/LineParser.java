@@ -18,9 +18,11 @@ public class LineParser {
     /**variableLineRegex**/
     private static final String FINAL = "\\s*(?:final)?\\s*"; ///todo should be + ??
     private static final String VARIABLE_TYPE = "\\s*(?:int|double|char|String|boolean)\\s+";
+    private static final String FINAL_AND_TYPE = "((" + FINAL + ")" + "(" + VARIABLE_TYPE +")?)";
     private static final String VARIABLE_NAME = "\\s*(?:_\\w+|[a-zA-Z]\\w*)\\s*";
     private static final String VARIABLE_VALUE = "\\s*\\S+\\s*";
     private static final String EXTRA_VARIABLES = "\\s*(?:=" + VARIABLE_VALUE + "|,"+ VARIABLE_NAME +")*\\s*";
+    private static final String VARIABLES_TO_EXTRACT = VARIABLE_NAME + "(=" + VARIABLE_VALUE + "(,|;))*";
 
     /**ifLineRegex**/
     private static final String IF_START = "^\\s*if\\s*\\(\\s*";
@@ -60,6 +62,8 @@ public class LineParser {
     private final Pattern returnLine;
     private final Pattern functionCallLine;
 
+
+
     private final Pattern variablesPattern;
     private final Pattern finalAndTypePattern;
 
@@ -80,8 +84,8 @@ public class LineParser {
         functionCallLine = Pattern.compile(FUNCTION_START + FUNCTION_PARAMETERS + FUNCTION_END);
 
 
-        variablesPattern = Pattern.compile( VARIABLE_NAME + EXTRA_VARIABLES);
-        finalAndTypePattern = Pattern.compile("(" + FINAL + ")" + "(" + VARIABLE_TYPE +")");
+        finalAndTypePattern = Pattern.compile(FINAL_AND_TYPE);
+        variablesPattern = Pattern.compile(VARIABLES_TO_EXTRACT);
     }
 
 
@@ -131,5 +135,4 @@ public class LineParser {
 
     public Pattern getFinalAndTypePattern() {return finalAndTypePattern;}
     public Pattern getVariablesPattern() {return variablesPattern;}
-
 }

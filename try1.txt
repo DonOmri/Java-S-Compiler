@@ -1,8 +1,8 @@
 //variables
-      int hello =   5, a = 6, b, g= "hello";
+int hello =5, a = 6, b, g= "ggg";
 char         goodbye = "hello";
         boolean zz =52.6;
-    double double= 26.0;
+   double double= 26.0;
     String      AAA = "zaza"
     int hello =   5, a = 6, b, g= "hello"; int hey
     int hello =   5, a = 6, b, g= "hello"; hello = 5;
@@ -10,7 +10,7 @@ char         goodbye = "hello";
 int int int;
 doubledouble;
 boolean
-//final variables
+final variables
 final int int = 0.00000;
 final int hello =   5, a = 6, b, g= "hello";
     final   double hello ="hello";
