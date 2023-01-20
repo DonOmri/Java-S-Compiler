@@ -1,0 +1,2 @@
+int a = 4, String b;
+int a = 4, String b = 3;

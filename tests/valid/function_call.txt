@@ -1,0 +1,8 @@
+foo();
+foo(a);
+foo(4);
+foo(a, 4);
+foo ( a,  4 )   ;
+    foo( a, 4 );
+foo(true, false, -1.2);
+foo(oren, true, false, 4, -17);

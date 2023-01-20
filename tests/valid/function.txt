@@ -1,0 +1,9 @@
+void foo(){
+void foo(int a){
+void foo(char c){
+void foo(final boolean b){
+void foo(char a, int b, boolean c){
+void foo(double a, final int oren){
+void foo(double  a, final   int  oren){
+void foo(double a , final   int   oren) {
+void foo(double a, final int oren, final char c) {
