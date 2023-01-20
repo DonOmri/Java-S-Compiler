@@ -8,13 +8,14 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Verifier {
 
     //holds all relevant data for each scope, including the global scope (at index 0)
-    private final List<Scope> scopes = new ArrayList<>();
+    private final ArrayList<Scope> scopes = new ArrayList<>();
     //holds the function names and line number
-    private final HashMap<String, Integer> functions = new HashMap<>();
+    private final HashMap<String, Function> functions = new HashMap<>();
     private BufferedReader bufferedReader;
     private LineParser parser;
 
@@ -78,14 +79,14 @@ public class Verifier {
      * @param startLine the index of the start of the function
      * @throws IOException in case there is some issue
      */
-    private void saveFunctionAndMoveOn(String line, int startLine) throws IOException {
+    private void saveFunctionAndMoveOn(String line, int startLine) throws Exception {
         System.out.println("functions");
         // get function name from the line
         // TODO: implement
         String funcName = line;
 
         // add function to DB
-        functions.put(funcName, startLine);
+        functions.put(funcName, new Function(startLine));
 
         // move cursor to the next line right after the function
         int numScopes = 0;
@@ -122,10 +123,10 @@ public class Verifier {
      */
     private void secondPass() throws Exception {
         //iterate over functions that were saved in the 1st pass
-        for (HashMap.Entry<String, Integer> entry : functions.entrySet()) {
+        for (HashMap.Entry<String, Function> entry : functions.entrySet()) {
 
             // get the cursor to the start of the function
-            for (int i = 0; i < entry.getValue(); ++i)
+            for (int i = 0; i < entry.getValue().startLine; ++i)
                 bufferedReader.readLine();
 
             //parse the first line of the function
@@ -178,16 +179,84 @@ public class Verifier {
         }
     }
 
-    //TODO: implement
+    /**
+     * This function receives a line classified as a function call, check the validity of its contents -
+     * 1) the name of the function exists
+     * 2) the parameters sent indeed fit the parameters expected
+     * @param line the function call line
+     * @throws Exception if problem
+     */
     private void parseFunctionCall(String line) throws Exception {
-        // function call - method name exists, params should be - good types, initialized, same number
+
+        // Regular expression to match function call
+        String regex = "([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(([^)]*)\\)";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(line);
+
+        if (matcher.find()) {
+
+            //check that the function exists
+            String functionName = matcher.group(1);
+            if (!functions.containsKey(functionName)) {
+                verificationFailed();
+            }
+            Function function = functions.get(functionName);
+
+            // get the parameters (split by comma and remove spaces)
+            String[] params = matcher.group(2).split(",");
+            for (int i = 0; i < params.length; i++) {
+                params[i] = params[i].trim();
+            }
+
+            //TODO: complete this check
+            //check the parameters fit the function
+            if (!function.validCall(params)) {
+                verificationFailed();
+            }
+        }
     }
 
-    //TODO: implement
-    private void parseFunctionLine(String line) throws IOException {
-        //add parameters as local variables in the scope
-        //init variables - final or not, with type and name
-        System.out.println("FUNCTION PARSE");
+    /**
+     * This function receives a line classified as a declaration of a function, saves the parameters as
+     * variables in the current scope (that was just opened) and adds them to the functions map for future
+     * calls.
+     * @param line the line
+     * @throws Exception in case of a problem
+     */
+    private void parseFunctionLine(String line) throws Exception {
+        // get function name
+        String functionName =
+                Pattern.compile("([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(([^)]*)\\)").matcher(line).group(1);
+
+        //get the different variables in the parameter list
+        ArrayList<Variable> parameters = new ArrayList<>();
+
+        // Regular expression to match function declaration
+        Matcher matcher = Pattern.compile("\\w+\\s+\\w+\\s*\\(([^)]*)\\)").matcher(line);
+
+        if (matcher.find()) {
+            // Split parameters by comma
+            String[] params = matcher.group(1).split(",");
+
+            // Trim whitespace and add each parameter to results
+            for (String param : params) {
+                String[] parts = param.trim().split("\\s+");
+                String type = parts[0];
+                String name = parts[1];
+                boolean isFinal = false;
+                if (parts.length > 2) {
+                    assert (parts[2].equals("final"));  // already validated by LineParser, assert for safety
+                    isFinal = true;
+                }
+                Variable var = new Variable(type, name, isFinal);
+                functions.get(functionName).parameters.add(var);  // add to function's parameters
+                boolean success = scopes.get(scopes.size() - 1).addVariable(var);   // add to local scope
+                if (!success) {
+                    //this scope has a variable with the same name, so this code is invalid
+                    verificationFailed();
+                }
+            }
+        }
     }
 
     /**
@@ -195,7 +264,7 @@ public class Verifier {
      * @param line a syntax-wise validated line
      * @throws IOException if a final variable wasn't assigned or a value don't match declared variable type
      */
-    private void extractVariables(String line) throws IOException { //todo currently dont throw exceptions, printerr instead
+    private void extractVariables(String line) throws Exception { //todo currently dont throw exceptions, printerr instead
         boolean isFinal = false;
         String type = "";
         //final and type
