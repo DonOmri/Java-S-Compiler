@@ -109,6 +109,6 @@ public class Variable {
 
     @Override
     public String toString() {
-        return " " + type + " Variable" + (isFinal ? " (Final)" : " (not Final)");
+        return " " + type + " Variable" + (isFinal ? " (final)" : " (not final)");
     }
 }

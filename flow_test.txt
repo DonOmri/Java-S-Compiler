@@ -2,15 +2,17 @@ int a = 3;
 void f1(int a){
     return;
 }
-//comment
 int b = 3;
 void f2(int a){
     final String z = 13;
     return;
 }
 final char c = 'a';
-void f2(int a){
+void f12(int a){
     final String z = 13;
+    if(true){
+        return;
+    }
     return;
 }
 void f16(int a){

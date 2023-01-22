@@ -1,5 +1,6 @@
 package oop.ex6;
 
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -169,6 +170,15 @@ public class LineParser {
     /**
      * WORKING ZONE
      **/
+
+    public String getFunctionName(String line){
+        assert(validFunctionDeclarationLine(line));
+        Matcher matcher = Pattern.compile("([a-zA-Z0-9_]+)\\s*\\(").matcher(line);
+        if(!matcher.find()){
+            assert(false);
+        }
+        return matcher.group(1);
+    }
 
     public Pattern getFinalAndTypePattern() {
         return finalAndTypePattern;

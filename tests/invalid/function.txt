@@ -1,7 +1,6 @@
 void (){
 void _foo(int a){
 void 1foo(char c){
-void foo(final boolean b){
 void foo(chars a, int b, boolean c){
 void foo(doubly a final int oren){
 int foo(double  a, final   int  oren){

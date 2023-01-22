@@ -4,9 +4,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -17,6 +15,7 @@ public class Verifier {
     //holds the function names and line number
     private final HashMap<String, Function> functions = new HashMap<>();
     private BufferedReader bufferedReader;
+    private String file;
     private LineParser parser;
 
     /**
@@ -26,19 +25,25 @@ public class Verifier {
      * @throws Exception in case of problems
      */
     public void verifySjavacFile(String file) throws Exception {
-        this.bufferedReader = new BufferedReader(new FileReader(file)); //throw here exceptions, remember to close
+        this.file = file;
+        this.bufferedReader = new BufferedReader(new FileReader(this.file)); // remember to close
         this.parser = new LineParser();
 
         //1st pass - verifies the global scope
-        firstPass();
         System.out.println("\n****************************************");
-        System.out.println("        verifySjavacFile is DONE");
+        System.out.println("      first pass - global scope");
         System.out.println("****************************************\n");
+        firstPass();
+        System.out.println("variables:");
         for (var variable : scopes.get(0).variablesMap.entrySet()) System.out.println(variable);
+        System.out.println("\nfunctions: (num of params should be zero)");
         functions.forEach((key, value) -> System.out.println(key + " : " + value));
 
         //2nd pass - verifies the internal lines in each function
-//        secondPass();
+        System.out.println("\n****************************************");
+        System.out.println("    second pass - inside functions");
+        System.out.println("****************************************\n");
+        secondPass();
     }
 
     /**
@@ -65,7 +70,7 @@ public class Verifier {
                     lineNumber = saveFunctionAndMoveOn(line, lineNumber);  // save function & update cursor
                     break;
                 default:
-                    verificationFailed("global scope contained something that's not variables or function");       // must contain only
+                    verificationFailed("global scope contained something that's not variables or function: " + parser.parseLineType(line));
             }
             lineNumber++;
         }
@@ -79,32 +84,29 @@ public class Verifier {
      * @throws IOException in case there is some issue
      */
     private int saveFunctionAndMoveOn(String line, int startLine) throws Exception {
-        // get function name from the line
-        Matcher matcher = Pattern.compile("([a-zA-Z0-9_]+)\\s*\\(").matcher(line);
-        String funcName = "";
-        if (!matcher.find()) {
-            verificationFailed("function name not found in function declaration");
-        }
-        funcName = matcher.group(1);
+        // get function name
+        String functionName = parser.getFunctionName(line);
 
         // add function to DB, unless it's already there which is wrong, so exit
-        if(functions.containsKey(funcName)){
+        if (functions.containsKey(functionName)) {
             verificationFailed("function name already exists");
         }
-        functions.put(funcName, new Function(startLine));
+        functions.put(functionName, new Function(startLine));
 
         // move cursor to the next line right after the function
-        int numScopes = 1, lineNumber = startLine + 1;
+        int numScopes = 1, lineNumber = startLine;
         while ((line = bufferedReader.readLine()) != null) {
             switch (parser.parseLineType(line)) {
                 case IF:
                 case WHILE:
                     numScopes++;
+                    break;
                 case END_OF_SCOPE:
                     numScopes--;
                     if (numScopes == 0) {
-                        return lineNumber;
+                        return lineNumber + 1;
                     }
+                    break;
             }
             lineNumber++;
         }
@@ -138,6 +140,7 @@ public class Verifier {
         for (HashMap.Entry<String, Function> entry : functions.entrySet()) {
 
             // get the cursor to the start of the function
+            this.bufferedReader = new BufferedReader(new FileReader(this.file));
             for (int i = 0; i < entry.getValue().startLine; ++i)
                 bufferedReader.readLine();
 
@@ -184,7 +187,7 @@ public class Verifier {
                         break;
                     case FUNCTION:  // it's invalid if there's another function definition
                     case UNRECOGNIZED:  // if none of the above, the line's invalid
-                        verificationFailed("line type wasn't recognized");
+                        verificationFailed("line type wasn't recognized at line " + lineNum);
                 }
                 lineNum++;
             }
@@ -239,8 +242,7 @@ public class Verifier {
      */
     private void parseFunctionLine(String line) throws Exception {
         // get function name
-        String functionName =
-                Pattern.compile("([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(([^)]*)\\)").matcher(line).group(1);
+        String functionName = parser.getFunctionName(line);
 
         //get the different variables in the parameter list
         ArrayList<Variable> parameters = new ArrayList<>();
