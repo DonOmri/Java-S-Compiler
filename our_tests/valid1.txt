@@ -1,0 +1,11 @@
+String s = "hello";
+
+void foo(int a, char c, final boolean b){
+    return;
+}
+
+//comment
+
+final int a = 4;
+
+boolean b;

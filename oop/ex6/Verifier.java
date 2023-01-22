@@ -280,7 +280,12 @@ public class Verifier {
             // Split parameters by comma
             String[] params = matcher.group(1).split(",");
 
-            // Trim whitespace and add each parameter to results
+            // if no params return
+            if(params.length == 1){
+                return;
+            }
+
+            // otherwise, trim whitespace and add each parameter to results
             for (String param : params) {
                 String[] parts = param.trim().split("\\s+");
                 String type = parts[0];
