@@ -1,12 +1,16 @@
 package oop.ex6;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.regex.Pattern;
 
 public class Variable {
     private final String type;
     private final boolean isFinal;
     private final String name;
     private final HashSet<String> allowedAssignTypes = new HashSet<>();
+    private static final HashMap<String, String> allowedAssignValues = new HashMap<>();
     private boolean assigned;
 
     //Constructor - called upon declaration of a variable
@@ -15,6 +19,7 @@ public class Variable {
         this.type = type;
         this.name = name;
         initAllowedAssignTypes();
+        initAllowedAssignValues();
     }
 
     //decides which assignment values are allowed, based on the type of the variable
@@ -39,6 +44,23 @@ public class Variable {
                 allowedAssignTypes.add("double");
                 break;
         }
+    }
+
+    //init regexes for allowed values to assign all types
+    private void initAllowedAssignValues() {
+
+        String allowed_for_int_regex = "(\\-|\\+)?\\d+";
+        String allowed_for_double_regex = "((\\-|\\+)?\\d+.?\\d*?)|((\\-|\\+)?\\d*.?\\d+?)";
+        String allowed_for_boolean_regex = "true|false|" + allowed_for_int_regex + allowed_for_double_regex;
+        String allowed_for_string_regex = "\".*\"";
+        String allowed_for_char_regex = "\'[\\S ]\'";
+
+        allowedAssignValues.put("int", allowed_for_int_regex);
+        allowedAssignValues.put("String", allowed_for_string_regex);
+        allowedAssignValues.put("char", allowed_for_char_regex);
+        allowedAssignValues.put("boolean", allowed_for_boolean_regex);
+        allowedAssignValues.put("double", allowed_for_double_regex);
+
     }
 
     //assign with a value
@@ -82,14 +104,13 @@ public class Variable {
 
     }
 
-    //TODO: implement
     //check that the type of value being assigned is valid
     private boolean validAssignmentType(String value) {
-        return true;
+        return Pattern.compile(allowedAssignValues.get(this.type)).matcher(value).matches();
     }
 
     //check that the type of variable being assigned is valid
-    private boolean validAssignmentType(oop.ex6.Variable variable) {
+    private boolean validAssignmentType(Variable variable) {
         return this.allowedAssignTypes.contains(variable.getType());
     }
 
