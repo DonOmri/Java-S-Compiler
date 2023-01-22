@@ -2,7 +2,6 @@ package oop.ex6;
 
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.regex.Pattern;
 
 public class Variable {

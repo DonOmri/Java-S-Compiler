@@ -1,0 +1,10 @@
+String d = "oren";
+
+void foo(int a){
+    return;
+}
+
+void f1(){
+    foo(d);
+    return;
+}

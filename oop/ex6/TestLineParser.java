@@ -70,7 +70,7 @@ public class TestLineParser {
         String invalid_path = "line_parser_tests/invalid/";
         String valid_path = "line_parser_tests/valid/";
 
-        float invalid_failure_rate = 0, valid_failure_rate = 0;
+        float invalid_failure_rate, valid_failure_rate;
         for (String check : checks) {
 
             String file = invalid_path + check + ".txt";

@@ -1,0 +1,11 @@
+String d = "oren";
+
+void foo(int a){
+    return;
+}
+
+void f1(){
+    int d = 15;
+    final String d = 3;
+    return;
+}
