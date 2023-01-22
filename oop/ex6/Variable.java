@@ -98,8 +98,7 @@ public class Variable {
         return this.type;
     }
 
-    public String getName()
-    {
+    public String getName() {
         return name;
     }
 
@@ -110,6 +109,6 @@ public class Variable {
 
     @Override
     public String toString() {
-        return " " +type + " Variable"  + (isFinal? " (Final)" : " (Not Final)");
+        return " " + type + " Variable" + (isFinal ? " (Final)" : " (not Final)");
     }
 }
