@@ -1,7 +1,0 @@
-//comment
-
-if(6){
-    while(true){
-
-    }
-}
