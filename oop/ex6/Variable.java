@@ -60,7 +60,7 @@ public class Variable {
     }
 
     //assign with a variable
-    public boolean assign(oop.ex6.Variable variable) {
+    public boolean assign(Variable variable) {
         //assignment to final that was already assigned
         if (isFinal && assigned) {
             return false;
@@ -109,6 +109,6 @@ public class Variable {
 
     @Override
     public String toString() {
-        return " " + type + " Variable" + (isFinal ? " (final)" : " (not final)");
+        return "Variable - type: " + type + ", name: " + name + (isFinal ? ", final" : ", not final");
     }
 }

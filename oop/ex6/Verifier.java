@@ -155,9 +155,11 @@ public class Verifier {
             LineParser parser = new LineParser();
             int lineNum = 1;
             int lastReturnLineNum = -1;
+            boolean next_function = false;
             while ((line = bufferedReader.readLine()) != null) {
                 switch (parser.parseLineType(line)) {
                     case COMMENT:
+                    case EMPTY:
                         break;
                     case IF:
                     case WHILE:
@@ -180,8 +182,13 @@ public class Verifier {
 
                         //check if this was the closing } of the function scope
                         if (numScopes == 0) {
-                            //verify that last line was a valid 'return;' statement
-                            if (lastReturnLineNum != lineNum - 1) {
+                            //if last line was a return, continue to next function
+                            if (lastReturnLineNum == lineNum - 1) {
+                                System.out.println("function " + entry.getKey() + "() is valid");
+                                next_function = true;
+                            }
+                            else{
+                                //invalid
                                 verificationFailed("last line of the function wasn't a return");
                             }
                         }
@@ -190,6 +197,7 @@ public class Verifier {
                     case UNRECOGNIZED:  // if none of the above, the line's invalid
                         verificationFailed("line type wasn't recognized at line " + lineNum);
                 }
+                if(next_function) break;
                 lineNum++;
             }
         }
@@ -215,7 +223,7 @@ public class Verifier {
             //check that the function exists
             String functionName = matcher.group(1);
             if (!functions.containsKey(functionName)) {
-                verificationFailed("call to function that doesn't exist");
+                verificationFailed("invalid function call - function that doesn't exist");
             }
             Function function = functions.get(functionName);
 
@@ -223,12 +231,29 @@ public class Verifier {
             String[] params = matcher.group(2).split(",");
             for (int i = 0; i < params.length; i++) {
                 params[i] = params[i].trim();
-            }
 
-            //TODO: complete this check
-            //check the parameters fit the function
-            if (!function.validCall(params)) {
-                verificationFailed("function call with wrong parameters");
+                //params[i] should be a valid assignment for function.parameters[i]
+                if(function.parameters.size() <= i){
+                    verificationFailed("invalid function call - wrong number of parameters given");
+                }
+
+                //decide if it is a variable or a value - search for the variable name in all scopes
+                //then, try to assign the i'th parameter of the function with this value/parameter
+                boolean found = false;
+                boolean success = false;
+                for (int j = scopes.size() - 1; j >= 0; j--) {
+                    if(scopes.get(j).variablesMap.containsKey(params[i])){
+                        found = true;  // it's a variable in  some outer scope
+                        Variable param = scopes.get(j).variablesMap.get(params[i]);  // get the variable
+                        success = function.parameters.get(i).assign(param);  // try to make the assignment
+                    }
+                }
+                if(!found){
+                    success = function.parameters.get(i).assign(params[i]);
+                }
+                if(!success){
+                    verificationFailed("invalid function call - bad parameters given");
+                }
             }
         }
     }
