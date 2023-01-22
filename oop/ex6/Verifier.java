@@ -112,8 +112,9 @@ public class Verifier {
                 String name = parts[1];
                 boolean isFinal = false;
                 if (parts.length > 2) {
-                    assert (parts[2].equals("final"));  // already validated by LineParser, assert for safety
                     isFinal = true;
+                    type = parts[1];
+                    name = parts[2];
                 }
                 Variable var = new Variable(type, name, isFinal);
                 functions.get(functionName).parameters.add(var);  // add to function's parameters
@@ -327,8 +328,7 @@ public class Verifier {
         //as long as you've found a correct syntax of a variable
         while (variableMatcher.find()) {
             //split it to crucial parts, and remove everything else
-            String[] varFragments = variableMatcher.group().replaceFirst("^\\s*", "").
-                    replaceAll("[,;=\\s]+", " ").split("\\s+");
+            String[] varFragments = variableMatcher.group().replaceFirst("^\\s*", "").replaceAll("[,;=\\s]+", " ").split("\\s+");
 
             if (varFragments.length > 0) for (var word : varFragments) System.out.println(word);
 

@@ -6,17 +6,17 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 public class Variable {
+    private static final HashMap<String, String> allowedAssignValues = new HashMap<>();
     private final String type;
     private final boolean isFinal;
     private final String name;
     private final HashSet<String> allowedAssignTypes = new HashSet<>();
-    private static final HashMap<String, String> allowedAssignValues = new HashMap<>();
     private boolean assigned;
 
     //Constructor - called upon declaration of a variable
     public Variable(String type, String name, boolean isFinal) throws Exception {
-        if(!Pattern.compile("char|int|String|double|boolean").matcher(type).matches()){
-            throw new Exception();
+        if (!Pattern.compile("char|int|String|double|boolean").matcher(type).matches()) {
+            throw new Exception("variable type wasn't char/int/String/double/boolean, it was " + type);
         }
         this.isFinal = isFinal;
         this.type = type;
