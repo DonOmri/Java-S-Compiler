@@ -6,3 +6,6 @@ foo ( a,  4 )   ;
     foo( a, 4 );
 foo(true, false, -1.2);
 foo(oren, true, false, 4, -17);
+f2("hey mate");
+f3('&');
+f4("15^");

@@ -14,7 +14,10 @@ public class Variable {
     private boolean assigned;
 
     //Constructor - called upon declaration of a variable
-    public Variable(String type, String name, boolean isFinal) {
+    public Variable(String type, String name, boolean isFinal) throws Exception {
+        if(!Pattern.compile("char|int|String|double|boolean").matcher(type).matches()){
+            throw new Exception();
+        }
         this.isFinal = isFinal;
         this.type = type;
         this.name = name;

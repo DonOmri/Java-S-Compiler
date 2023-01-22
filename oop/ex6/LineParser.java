@@ -60,7 +60,7 @@ public class LineParser {
      **/
     private static final String FUNCTION_NAME = "\\s*([a-zA-Z][a-zA-Z\\d_]*)\\s*";
     private static final String FUNCTION_START = FUNCTION_NAME + "\\s*\\(\\s*";
-    private static final String FUNCTION_PARAMETER = "\\s*\\S+\\s*";
+    private static final String FUNCTION_PARAMETER = "\\s*(\\S+|\".*\"|\'.\')\\s*";
     private static final String FUNCTION_PARAMETERS = "(" + FUNCTION_PARAMETER + "(\\s*,\\s*" + FUNCTION_PARAMETER + "\\s*)*)?";
     private static final String FUNCTION_END = "\\s*\\)\\s*;\\s*";
 

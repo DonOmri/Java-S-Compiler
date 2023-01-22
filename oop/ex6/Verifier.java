@@ -68,7 +68,7 @@ public class Verifier {
                     extractVariables(line);  // validate the line, and save the variable
                     break;
                 case FUNCTION:
-                    lineNumber = saveFunctionAndMoveOn(line, lineNumber);  // save function & update cursor
+                    lineNumber = saveFunctionNameAndParams(line, lineNumber);  // save function & update cursor
                     break;
                 default:
                     verificationFailed("global scope contained something that's not variables or function: " + parser.parseLineType(line));
@@ -84,7 +84,7 @@ public class Verifier {
      * @param startLine the index of the start of the function
      * @throws IOException in case there is some issue
      */
-    private int saveFunctionAndMoveOn(String line, int startLine) throws Exception {
+    private int saveFunctionNameAndParams(String line, int startLine) throws Exception {
         // get function name
         String functionName = parser.getFunctionName(line);
 
@@ -94,7 +94,33 @@ public class Verifier {
         }
         functions.put(functionName, new Function(startLine));
 
-        // move cursor to the next line right after the function
+        // regex to match function declaration
+        Matcher matcher = Pattern.compile("\\w+\\s+\\w+\\s*\\(([^)]*)\\)").matcher(line);
+        if (!matcher.find()) {
+            verificationFailed("invalid structure of function declaration");
+        }
+
+        // else, get the parameters and split them by comma
+        String[] params = matcher.group(1).split(",");
+
+        // if there are any params, parse them into a variable and save them
+        if (!(params.length == 1 && params[0].equals(""))) {
+            // otherwise, trim whitespace and add each parameter to results
+            for (String param : params) {
+                String[] parts = param.trim().split("\\s+");
+                String type = parts[0];
+                String name = parts[1];
+                boolean isFinal = false;
+                if (parts.length > 2) {
+                    assert (parts[2].equals("final"));  // already validated by LineParser, assert for safety
+                    isFinal = true;
+                }
+                Variable var = new Variable(type, name, isFinal);
+                functions.get(functionName).parameters.add(var);  // add to function's parameters
+            }
+        }
+
+        // move cursor to the next line right after the function declaration
         int numScopes = 1, lineNumber = startLine;
         while ((line = bufferedReader.readLine()) != null) {
             switch (parser.parseLineType(line)) {
@@ -149,7 +175,7 @@ public class Verifier {
             String line = bufferedReader.readLine();
             scopes.add(new Scope());
             int numScopes = 1;
-            parseFunctionLine(line);
+            addParamsToLocalScope(line);  //insert parameters of the function to the scope
 
             //parse all the inner lines of the function
             LineParser parser = new LineParser();
@@ -186,8 +212,7 @@ public class Verifier {
                             if (lastReturnLineNum == lineNum - 1) {
                                 System.out.println("function " + entry.getKey() + "() is valid");
                                 next_function = true;
-                            }
-                            else{
+                            } else {
                                 //invalid
                                 verificationFailed("last line of the function wasn't a return");
                             }
@@ -197,7 +222,7 @@ public class Verifier {
                     case UNRECOGNIZED:  // if none of the above, the line's invalid
                         verificationFailed("line type wasn't recognized at line " + lineNum);
                 }
-                if(next_function) break;
+                if (next_function) break;
                 lineNum++;
             }
         }
@@ -233,7 +258,7 @@ public class Verifier {
                 params[i] = params[i].trim();
 
                 //params[i] should be a valid assignment for function.parameters[i]
-                if(function.parameters.size() <= i){
+                if (function.parameters.size() <= i) {
                     verificationFailed("invalid function call - wrong number of parameters given");
                 }
 
@@ -242,16 +267,16 @@ public class Verifier {
                 boolean found = false;
                 boolean success = false;
                 for (int j = scopes.size() - 1; j >= 0; j--) {
-                    if(scopes.get(j).variablesMap.containsKey(params[i])){
+                    if (scopes.get(j).variablesMap.containsKey(params[i])) {
                         found = true;  // it's a variable in  some outer scope
                         Variable param = scopes.get(j).variablesMap.get(params[i]);  // get the variable
                         success = function.parameters.get(i).assign(param);  // try to make the assignment
                     }
                 }
-                if(!found){
+                if (!found) {
                     success = function.parameters.get(i).assign(params[i]);
                 }
-                if(!success){
+                if (!success) {
                     verificationFailed("invalid function call - bad parameters given");
                 }
             }
@@ -266,42 +291,15 @@ public class Verifier {
      * @param line the line
      * @throws Exception in case of a problem
      */
-    private void parseFunctionLine(String line) throws Exception {
+    private void addParamsToLocalScope(String line) throws Exception {
         // get function name
         String functionName = parser.getFunctionName(line);
 
-        //get the different variables in the parameter list
-        ArrayList<Variable> parameters = new ArrayList<>();
-
-        // Regular expression to match function declaration
-        Matcher matcher = Pattern.compile("\\w+\\s+\\w+\\s*\\(([^)]*)\\)").matcher(line);
-
-        if (matcher.find()) {
-            // Split parameters by comma
-            String[] params = matcher.group(1).split(",");
-
-            // if no params return
-            if(params.length == 1){
-                return;
-            }
-
-            // otherwise, trim whitespace and add each parameter to results
-            for (String param : params) {
-                String[] parts = param.trim().split("\\s+");
-                String type = parts[0];
-                String name = parts[1];
-                boolean isFinal = false;
-                if (parts.length > 2) {
-                    assert (parts[2].equals("final"));  // already validated by LineParser, assert for safety
-                    isFinal = true;
-                }
-                Variable var = new Variable(type, name, isFinal);
-                functions.get(functionName).parameters.add(var);  // add to function's parameters
-                boolean success = scopes.get(scopes.size() - 1).addVariable(var);   // add to local scope
-                if (!success) {
-                    //this scope already has a variable with this name, which is wrong
-                    verificationFailed("function parameters with the same name");
-                }
+        for (Variable var : functions.get(functionName).parameters) {
+            // try to add param to local scope
+            boolean success = scopes.get(scopes.size() - 1).addVariable(var);
+            if (!success) {  //this scope already has a variable with this name, which is wrong
+                verificationFailed("function parameters with the same name");
             }
         }
     }
