@@ -9,5 +9,6 @@ public enum LineType {
     FUNCTION_CALL,
     RETURN,
     END_OF_SCOPE,
+    EMPTY,
     UNRECOGNIZED
 }

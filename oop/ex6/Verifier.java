@@ -62,7 +62,8 @@ public class Verifier {
         while ((line = bufferedReader.readLine()) != null) {
             switch (parser.parseLineType(line)) {
                 case COMMENT:
-                    break;
+                case EMPTY:
+                    break;  // ignore comments or empty lines
                 case VARIABLE:
                     extractVariables(line);  // validate the line, and save the variable
                     break;

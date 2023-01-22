@@ -14,7 +14,8 @@ public class LineParser {
      * generalRegex
      **/
     private static final String END_OF_SCOPE = "\\s*}\\s*";
-    private static final String IGNORED_LINE = "\\s*//.*|\\s*";
+    private static final String EMPTY_LINE = "\\s*";
+    private static final String COMMENT = "^//.*";
     private static final String RETURN = "\\s*return\\s*;\\s*";
     private static final String END_LINE = ";\\s*";
 
@@ -70,7 +71,8 @@ public class LineParser {
     private final Pattern whileLine;
     private final Pattern functionLine;
     private final Pattern variableLine;
-    private final Pattern ignoredLine;
+    private final Pattern commentLine;
+    private final Pattern emptyLine;
     private final Pattern endOfScopeLine;
     private final Pattern returnLine;
     private final Pattern functionCallLine;
@@ -89,7 +91,8 @@ public class LineParser {
         whileLine = Pattern.compile(WHILE_START + WHILE_CONDITIONS + WHILE_END);
         functionLine = Pattern.compile(FUNCTION_DECLARATION);
         variableLine = Pattern.compile(FINAL + VARIABLE_TYPE + VARIABLE_NAME + EXTRA_VARIABLES + END_LINE);
-        ignoredLine = Pattern.compile(IGNORED_LINE);
+        emptyLine = Pattern.compile(EMPTY_LINE);
+        commentLine = Pattern.compile(COMMENT);
         endOfScopeLine = Pattern.compile(END_OF_SCOPE);
         returnLine = Pattern.compile(RETURN);
         functionCallLine = Pattern.compile(FUNCTION_START + FUNCTION_PARAMETERS + FUNCTION_END);
@@ -106,9 +109,15 @@ public class LineParser {
      * @param line the given line, unprocessed
      * @return true if the structure of the line is valid, false otherwise.
      */
-    private boolean validIgnoredLine(String line) {
-        return ignoredLine.matcher(line).matches();
+
+    private boolean validCommentLine(String line){
+        return commentLine.matcher(line).matches();
     }
+
+    private boolean validEmptyLine(String line){
+        return emptyLine.matcher(line).matches();
+    }
+
 
     private boolean validVariableLine(String line) {
         return variableLine.matcher(line).matches();
@@ -147,8 +156,10 @@ public class LineParser {
     public LineType parseLineType(String line) {
         if (validFunctionDeclarationLine(line)) {
             return LineType.FUNCTION;
-        } else if (validIgnoredLine(line)) {
+        } else if (validCommentLine(line)) {
             return LineType.COMMENT;
+        } else if (validEmptyLine(line)) {
+            return LineType.EMPTY;
         } else if (validIfLine(line)) {
             return LineType.IF;
         } else if (validWhileLine(line)) {
