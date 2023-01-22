@@ -67,8 +67,8 @@ public class TestLineParser {
     }
 
     public static void main(String[] args) throws IOException {
-        String invalid_path = "tests/invalid/";
-        String valid_path = "tests/valid/";
+        String invalid_path = "line_parser_tests/invalid/";
+        String valid_path = "line_parser_tests/valid/";
 
         float invalid_failure_rate = 0, valid_failure_rate = 0;
         for (String check : checks) {
