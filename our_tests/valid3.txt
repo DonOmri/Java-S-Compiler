@@ -1,0 +1,10 @@
+void f1(int a){
+    return;
+}
+
+int z = 15;
+
+void f2(){
+    f1(z);
+    return;
+}

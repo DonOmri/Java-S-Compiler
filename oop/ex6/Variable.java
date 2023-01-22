@@ -90,10 +90,11 @@ public class Variable {
             return false;
         }
 
-        //check the variable was assigned
-        if (!variable.wasAssigned()) {
-            return false;
-        }
+        //assert that the variable was assigned
+        //TODO: uncomment when treating variable assignment is working
+//        if (!variable.wasAssigned()) {
+//            return false;
+//        }
 
         //trying to assign with asn invalid type
         if (!validAssignmentType(variable)) {

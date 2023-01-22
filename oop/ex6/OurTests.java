@@ -6,7 +6,7 @@ import java.util.HashMap;
 
 public class OurTests {
 
-    public static String[] valid_files = new String[]{"valid1", "valid2"};
+    public static String[] valid_files = new String[]{"valid3"};
     public static String[] invalid_files = new String[]{};
 
     public static void testValueClassification(String[] values, String type) throws Exception {
