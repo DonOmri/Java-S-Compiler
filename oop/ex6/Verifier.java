@@ -1,5 +1,9 @@
 package oop.ex6;
 
+import oop.ex6.Exceptions.FinalVariableException;
+import oop.ex6.Exceptions.TypeValueMismatchException;
+import oop.ex6.Exceptions.VariableException;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -12,11 +16,17 @@ public class Verifier {
 
     //holds all relevant data for each scope, including the global scope (at index 0)
     private final ArrayList<Scope> scopes = new ArrayList<>();
+
     //holds the function names and line number
     private final HashMap<String, Function> functions = new HashMap<>();
     private BufferedReader bufferedReader;
     private String file;
     private LineParser parser;
+
+    private static final int NO_ASSIGNMENT_LENGTH = 1;
+    private static final int ASSIGNMENT_LENGTH = 2;
+    private static final int VAR_NAME_LOCATION = 0;
+    private static final int VAR_VALUE_LOCATION = 1;
 
     /**
      * This function receives a path to a sJavac file, and verifies its validity.
@@ -66,6 +76,9 @@ public class Verifier {
                     break;  // ignore comments or empty lines
                 case VARIABLE:
                     extractVariables(line);  // validate the line, and save the variable
+                    break;
+                case POSSIBLE_ASSIGNMENT:
+                    checkAssignmentForLine(line);
                     break;
                 case FUNCTION:
                     lineNumber = saveFunctionNameAndParams(line, lineNumber);  // save function & update cursor
@@ -306,48 +319,124 @@ public class Verifier {
     }
 
     /**
+     * extracts new variables from a declaration line
      * @param line a syntax-wise validated line
      * @throws IOException if a final variable wasn't assigned or a value don't match declared variable type
      */
-    private void extractVariables(String line) throws Exception { //todo currently dont throw exceptions, printerr instead
-        boolean isFinal = false;
-        String type = "";
-        //final and type
+    //todo currently dont throw exceptions, printerr instead
+    private void extractVariables(String line) throws Exception {
         Matcher isFinalAndTypeMatcher = parser.getFinalAndTypePattern().matcher(line);
-        if (isFinalAndTypeMatcher.find()) {
-            String[] isFinalAndType = isFinalAndTypeMatcher.group().replaceFirst("^\\s+", "").split("\\s+");
-            isFinal = isFinalAndType[0].equals("final");
-            type = isFinal ? isFinalAndType[1] : isFinalAndType[0];
+
+        String[] finalAndTypeAsString = extractFinalAndType(isFinalAndTypeMatcher);
+        boolean isFinal = finalAndTypeAsString[0].equals("true");
+        String type = finalAndTypeAsString[1];
+
+        Matcher variableMatcher = parser.getVariablesPattern().matcher(
+                line.substring(isFinalAndTypeMatcher.end()));
+
+        while (variableMatcher.find()) extractSingleVariable(variableMatcher, isFinal, type);
+    }
+
+    /**
+     * Detects the type of the declared variables in line, and whether they are final or not
+     * @param matcher the matcher that holds the pattern for type and final
+     * @return a string containing the type of the variables, and whether they are final or not
+     */
+    private String[] extractFinalAndType(Matcher matcher){
+        String[] finalAndType = new String[2];
+        if (matcher.find()) {
+            String[] isFinalAndType = matcher.group().replaceFirst("^\\s+", "").split("\\s+");
+            finalAndType[0] = isFinalAndType[0].equals("final") ? "true" : "false";
+            finalAndType[1] = finalAndType[0].equals("true") ? isFinalAndType[1] : isFinalAndType[0];
         }
 
-        String variablesAsString = line.substring(isFinalAndTypeMatcher.end());
-        System.out.println(variablesAsString);
+        return finalAndType;
+    }
 
-        Matcher variableMatcher = parser.getVariablesPattern().matcher(variablesAsString);
+    /**
+     * Extracts a single variable from the line
+     * @param varMatcher the matcher that detects variables
+     * @param isFinal whether the variable final or not
+     * @param type type of the variable
+     * @throws Exception
+     */
+    private void extractSingleVariable(Matcher varMatcher, boolean isFinal, String type) throws VariableException {
+        String[] varFragments = varMatcher.group().replaceFirst("^\\s*", "")
+                .replaceAll("[,;=\\s]+", " ").split("\\s+");
 
-        //as long as you've found a correct syntax of a variable
-        while (variableMatcher.find()) {
-            //split it to crucial parts, and remove everything else
-            String[] varFragments = variableMatcher.group().replaceFirst("^\\s*", "").replaceAll("[,;=\\s]+", " ").split("\\s+");
-
-            if (varFragments.length > 0) for (var word : varFragments) System.out.println(word);
-
-            //if there was only one parts - no assignment occurred
-            if (varFragments.length == 1) {
-                if (isFinal) System.err.println("err - final wasn't assigned");
-                else scopes.get(scopes.size() - 1).addVariable(new Variable(type, varFragments[0], false));
-            }
-            //assignment occurred - compare type and value
-            else if (varFragments.length == 2) {
-                if (!compareTypeAndValue(type, varFragments[1]))
-                    System.err.println("err  - type and value don't match");
-                else scopes.get(scopes.size() - 1).addVariable(new Variable(type, varFragments[0], isFinal));
-            } else System.out.println("SOMETHING WEIRD HAPPENED");
+        //if there was only one part - no assignment occurred
+        if (varFragments.length == NO_ASSIGNMENT_LENGTH) {
+            if (isFinal) throw new FinalVariableException(true);
+            scopes.get(scopes.size() - 1).addVariable(new Variable(type, varFragments[0], false));
+        }
+        //assignment occurred - compare type and value
+        else if (varFragments.length == ASSIGNMENT_LENGTH) {
+            var newVar = new Variable(type, varFragments[VAR_NAME_LOCATION], isFinal);
+            if (!newVar.assign(varFragments[VAR_VALUE_LOCATION]) && !ValidateAssignment(varFragments, type))
+                throw new TypeValueMismatchException(varFragments);
+            else scopes.get(scopes.size() - 1).addVariable(newVar);
         }
     }
 
-    private boolean compareTypeAndValue(String type, String value) { //todo
 
-        return true;
+    /**
+     * Checks assignment for an assignment line
+     * @param line a line to check
+     */
+    private void checkAssignmentForLine(String line) throws TypeValueMismatchException{
+        Matcher variableMatcher = parser.getVariablesPattern().matcher(line);
+        while (variableMatcher.find()){
+            String[] varFragments = variableMatcher.group().replaceFirst("^\\s*", "").
+                    replaceAll("[,;=\\s]+", " ").split("\\s+");
+
+            if (!ValidateAssignment(varFragments, GetValueType(varFragments[0]))) return;
+        }
+    }
+
+    /**
+     * Checks assignment for one variable
+     * @param varFragments the assigned variable and assignee
+     * @return true if assignment succeeded, false otherwise
+     */
+    private boolean ValidateAssignment(String[] varFragments, String assignedType)
+            throws TypeValueMismatchException
+    {
+        String assigned = varFragments[0], assignee = varFragments[1];
+        String assigneeType = GetValueType(assignee);
+
+        for (int i = scopes.size()-1; i>= 0; --i){
+            var scopeVariables = scopes.get(i).variablesMap;
+
+            if (assignedType.equals("") && scopeVariables.containsKey(assigned)) //check first var in scope
+                assignedType = scopeVariables.get(assigned).getType();
+
+            if (assigneeType.equals("") && scopeVariables.containsKey(assignee)) //check second var in scope
+                assigneeType = scopeVariables.get(assignee).getType();
+
+            if (!assignedType.equals("") && !assigneeType.equals("") && assignedType.equals(assigneeType))
+                return true;
+        }
+
+        throw new TypeValueMismatchException(varFragments);
+    }
+
+    /**
+     * Checks type of the possible value
+     * @param assignee the possible value as string
+     * @return the value type, or "" if nothing fits
+     */
+    private String GetValueType(String assignee){
+        if(parser.getIntValuesPattern().matcher(assignee).matches()){
+            return "int";
+        } else if(parser.getDoubleValuesPattern().matcher(assignee).matches()){
+            return "double";
+        } else if(parser.getBooleanValuesPattern().matcher(assignee).matches()){
+            return "boolean";
+        } else if(parser.getStringValuesPattern().matcher(assignee).matches()){
+            return "String";
+        } else if(parser.getCharValuesPattern().matcher(assignee).matches()){
+            return "char";
+        }
+        else return ""; //if nothing fits
     }
 }

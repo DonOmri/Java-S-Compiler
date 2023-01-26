@@ -10,5 +10,6 @@ public enum LineType {
     RETURN,
     END_OF_SCOPE,
     EMPTY,
+    POSSIBLE_ASSIGNMENT,
     UNRECOGNIZED
 }

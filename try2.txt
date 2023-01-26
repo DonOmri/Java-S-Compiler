@@ -1,1 +1,21 @@
-final int hello =5, a = 6, b, g= "ggg";
+//int hello =5, a = 6, b, g= "ggg";
+
+int a = 4;
+int d = a;
+int c = 5;
+d = c;
+a = 2;
+d = 3, a= 10;
+d = 3, a= "10";
+d = 5.2, a =    6;
+
+//String b = "hi";
+//b = a;
+//a = b;
+
+
+c = a;
+a = c;
+//a = 5;
+//a = "hi";
+

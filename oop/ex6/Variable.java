@@ -1,5 +1,8 @@
 package oop.ex6;
 
+import oop.ex6.Exceptions.NoVariableTypeException;
+import oop.ex6.Exceptions.VariableException;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.regex.Pattern;
@@ -13,9 +16,9 @@ public class Variable {
     private boolean assigned;
 
     //Constructor - called upon declaration of a variable
-    public Variable(String type, String name, boolean isFinal) throws Exception {
+    public Variable(String type, String name, boolean isFinal) throws NoVariableTypeException {
         if (!Pattern.compile("char|int|String|double|boolean").matcher(type).matches()) {
-            throw new Exception("variable type wasn't char/int/String/double/boolean, it was " + type);
+            throw new NoVariableTypeException(type);
         }
         this.isFinal = isFinal;
         this.type = type;
@@ -27,23 +30,18 @@ public class Variable {
     //decides which assignment values are allowed, based on the type of the variable
     private void initAllowedAssignTypes() {
         switch (this.type) {
+            case "boolean":
+                allowedAssignTypes.add("boolean");
+            case "double":
+                allowedAssignTypes.add("double");
             case "int":
                 allowedAssignTypes.add("int");
-                break;
-            case "double":
-                allowedAssignTypes.add("int");
-                allowedAssignTypes.add("double");
                 break;
             case "String":
                 allowedAssignTypes.add("String");
                 break;
             case "char":
                 allowedAssignTypes.add("char");
-                break;
-            case "boolean":
-                allowedAssignTypes.add("boolean");
-                allowedAssignTypes.add("int");
-                allowedAssignTypes.add("double");
                 break;
         }
     }

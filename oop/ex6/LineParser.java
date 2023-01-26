@@ -26,7 +26,9 @@ public class LineParser {
     private static final String VARIABLE_TYPE = "\\s*(?:int|double|char|String|boolean)\\s+";
     private static final String VARIABLE_NAME = "\\s*(?:_\\w+|[a-zA-Z]\\w*)\\s*";
     private static final String VARIABLE_VALUE = "\\s*\\S+\\s*";
-    private static final String EXTRA_VARIABLES = "\\s*(?:=" + VARIABLE_VALUE + "|," + VARIABLE_NAME + ")*\\s*";
+    private static final String EXTRA_VARIABLES = "\\s*(?:=" + VARIABLE_VALUE + "|," + VARIABLE_NAME +
+            ")*\\s*";
+    private static final String FINAL_AND_TYPE = "(" + FINAL + ")" + "(" + VARIABLE_TYPE + ")";
 
     /**
      * ifLineRegex
@@ -43,17 +45,21 @@ public class LineParser {
      **/
     private static final String WHILE_START = "^\\s*while\\s*\\(\\s*";
     private static final String WHILE_CONDITION = IF_CONDITION;
-    private static final String WHILE_CONDITIONS = WHILE_CONDITION + "(" + AND_OR_CONDITION + WHILE_CONDITION + ")*";
+    private static final String WHILE_CONDITIONS = WHILE_CONDITION + "(" + AND_OR_CONDITION +
+            WHILE_CONDITION + ")*";
     private static final String WHILE_END = IF_END;
 
     /**
      * functionDeclarationLineRegex
      **/
-    private static final String FUNCTION_DECLARATION_START = "^\\s*void\\s+([a-zA-Z]([a-zA-Z\\d_])*)\\s*\\(\\s*";
+    private static final String FUNCTION_DECLARATION_START =
+            "^\\s*void\\s+([a-zA-Z]([a-zA-Z\\d_])*)\\s*\\(\\s*";
     private static final String FUNCTION_DECLARATION_PARAMETER = FINAL + VARIABLE_TYPE + VARIABLE_NAME;
-    private static final String FUNCTION_DECLARATION_PARAMETERS = "(" + FUNCTION_DECLARATION_PARAMETER + "(\\s*,\\s*" + FUNCTION_DECLARATION_PARAMETER + "\\s*)*)?";
+    private static final String FUNCTION_DECLARATION_PARAMETERS = "(" + FUNCTION_DECLARATION_PARAMETER +
+            "(\\s*,\\s*" + FUNCTION_DECLARATION_PARAMETER + "\\s*)*)?";
     private static final String FUNCTION_DECLARATION_END = "\\)\\s*\\{\\s*$";
-    private static final String FUNCTION_DECLARATION = FUNCTION_DECLARATION_START + FUNCTION_DECLARATION_PARAMETERS + FUNCTION_DECLARATION_END;
+    private static final String FUNCTION_DECLARATION = FUNCTION_DECLARATION_START +
+            FUNCTION_DECLARATION_PARAMETERS + FUNCTION_DECLARATION_END;
 
     /**
      * functionCallLineRegex
@@ -61,8 +67,20 @@ public class LineParser {
     private static final String FUNCTION_NAME = "\\s*([a-zA-Z][a-zA-Z\\d_]*)\\s*";
     private static final String FUNCTION_START = FUNCTION_NAME + "\\s*\\(\\s*";
     private static final String FUNCTION_PARAMETER = "\\s*(\\S+|\".*\"|\'.\')\\s*";
-    private static final String FUNCTION_PARAMETERS = "(" + FUNCTION_PARAMETER + "(\\s*,\\s*" + FUNCTION_PARAMETER + "\\s*)*)?";
+    private static final String FUNCTION_PARAMETERS = "(" + FUNCTION_PARAMETER + "(\\s*,\\s*" +
+            FUNCTION_PARAMETER + "\\s*)*)?";
     private static final String FUNCTION_END = "\\s*\\)\\s*;\\s*";
+
+    /**
+     * Variable Values Regex
+     */
+    private static final String INT_REGEX = "(\\-|\\+)?\\d+";
+    private static final String DOUBLE_REGEX = "((\\-|\\+)?\\d+.?\\d*?)|((\\-|\\+)?\\d*.?\\d+?)";
+    private static final String BOOLEAN_REGEX = "true|false|" + INT_REGEX + DOUBLE_REGEX;
+    private static final String STRING_REGEX = "\".*\"";
+    private static final String CHAR_REGEX = "\'[\\S ]\'";
+    private static final String POSSIBLE_ASSIGNMENT = "(" + VARIABLE_NAME +"=\\s*(" + VARIABLE_VALUE + "|" +
+         VARIABLE_NAME + "),)*" + VARIABLE_NAME +"=\\s*(" + VARIABLE_VALUE + "|" + VARIABLE_NAME + ");\\s*";
 
     /**
      * Patterns
@@ -76,12 +94,14 @@ public class LineParser {
     private final Pattern endOfScopeLine;
     private final Pattern returnLine;
     private final Pattern functionCallLine;
-
+    private final Pattern possibleAssignmentLine;
     private final Pattern variablesPattern;
     private final Pattern finalAndTypePattern;
-
-    //    private static final String start = "^\\s*" + FUNCTION_NAME_REGEX + "\\s*" + "\\(\\s*";
-//    private static final String METHOD_NAME_REGEX = "[ \\t]void(?:[ \\t])+[a-zA-Z]+\\w";
+    private final Pattern charValuePattern;
+    private final Pattern stringValuePattern;
+    private final Pattern booleanValuePattern;
+    private final Pattern doubleValuePattern;
+    private final Pattern intValuePattern;
 
     /**
      * Constructor
@@ -90,100 +110,62 @@ public class LineParser {
         ifLine = Pattern.compile(IF_START + IF_CONDITIONS + IF_END);
         whileLine = Pattern.compile(WHILE_START + WHILE_CONDITIONS + WHILE_END);
         functionLine = Pattern.compile(FUNCTION_DECLARATION);
-        variableLine = Pattern.compile(FINAL + VARIABLE_TYPE + VARIABLE_NAME + EXTRA_VARIABLES + END_LINE);
+        variableLine = Pattern.compile(FINAL + VARIABLE_TYPE + VARIABLE_NAME + EXTRA_VARIABLES +
+                END_LINE);
         emptyLine = Pattern.compile(EMPTY_LINE);
         commentLine = Pattern.compile(COMMENT);
         endOfScopeLine = Pattern.compile(END_OF_SCOPE);
         returnLine = Pattern.compile(RETURN);
         functionCallLine = Pattern.compile(FUNCTION_START + FUNCTION_PARAMETERS + FUNCTION_END);
+        possibleAssignmentLine = Pattern.compile(POSSIBLE_ASSIGNMENT);
 
+        variablesPattern = Pattern.compile(VARIABLE_NAME + "(?:=\\s*" + VARIABLE_VALUE +
+                ")?\\s*(?:,|;)");
+        finalAndTypePattern = Pattern.compile(FINAL_AND_TYPE);
+        booleanValuePattern = Pattern.compile(BOOLEAN_REGEX);
+        doubleValuePattern = Pattern.compile(DOUBLE_REGEX);
+        intValuePattern = Pattern.compile(INT_REGEX);
+        stringValuePattern = Pattern.compile(STRING_REGEX);
+        charValuePattern = Pattern.compile(CHAR_REGEX);
 
-        variablesPattern = Pattern.compile(VARIABLE_NAME + EXTRA_VARIABLES);
-        finalAndTypePattern = Pattern.compile("(" + FINAL + ")" + "(" + VARIABLE_TYPE + ")");
     }
 
 
     /**
-     * All following functions validate a certain type of line (STRUCTURE ONLY)
-     *
-     * @param line the given line, unprocessed
-     * @return true if the structure of the line is valid, false otherwise.
-     */
-
-    private boolean validCommentLine(String line){
-        return commentLine.matcher(line).matches();
-    }
-
-    private boolean validEmptyLine(String line){
-        return emptyLine.matcher(line).matches();
-    }
-
-
-    private boolean validVariableLine(String line) {
-        return variableLine.matcher(line).matches();
-    }
-
-    private boolean validIfLine(String line) {
-        return ifLine.matcher(line).matches();
-    }
-
-    private boolean validWhileLine(String line) {
-        return whileLine.matcher(line).matches();
-    }
-
-    private boolean validFunctionDeclarationLine(String line) {
-        return functionLine.matcher(line).matches();
-    }
-
-    private boolean validFunctionCall(String line) {
-        return functionCallLine.matcher(line).matches();
-    }
-
-    private boolean validReturnLine(String line) {
-        return returnLine.matcher(line).matches();
-    }
-
-    private boolean validEndOfScope(String line) {
-        return endOfScopeLine.matcher(line).matches();
-    }
-
-    /**
-     * Returns type of line, based on the valid functions above
+     * Returns the type of given line, based on parser regex
      *
      * @param line the given line
      * @return LineType which is the type of the line
      */
     public LineType parseLineType(String line) {
-        if (validFunctionDeclarationLine(line)) {
+        if (functionLine.matcher(line).matches()) {
             return LineType.FUNCTION;
-        } else if (validCommentLine(line)) {
+        } else if (commentLine.matcher(line).matches()) {
             return LineType.COMMENT;
-        } else if (validEmptyLine(line)) {
+        } else if (emptyLine.matcher(line).matches()) {
             return LineType.EMPTY;
-        } else if (validIfLine(line)) {
+        } else if (ifLine.matcher(line).matches()) {
             return LineType.IF;
-        } else if (validWhileLine(line)) {
+        } else if (whileLine.matcher(line).matches()) {
             return LineType.WHILE;
-        } else if (validVariableLine(line)) {
+        } else if (variableLine.matcher(line).matches()) {
             return LineType.VARIABLE;
-        } else if (validFunctionCall(line)) {
+        } else if (functionCallLine.matcher(line).matches()) {
             return LineType.FUNCTION_CALL;
-        } else if (validReturnLine(line)) {
+        } else if (returnLine.matcher(line).matches()) {
             return LineType.RETURN;
-        } else if (validEndOfScope(line)) {
+        } else if (endOfScopeLine.matcher(line).matches()) {
             return LineType.END_OF_SCOPE;
+        } else if (possibleAssignmentLine.matcher(line).matches()) {
+            return LineType.POSSIBLE_ASSIGNMENT;
         } else {
             return LineType.UNRECOGNIZED;
         }
     }
 
 
-    /**
-     * WORKING ZONE
-     **/
-
     public String getFunctionName(String line){
-        assert(validFunctionDeclarationLine(line));
+        assert(functionLine.matcher(line).matches());
         Matcher matcher = Pattern.compile("([a-zA-Z0-9_]+)\\s*\\(").matcher(line);
         if(!matcher.find()){
             assert(false);
@@ -191,12 +173,18 @@ public class LineParser {
         return matcher.group(1);
     }
 
+    /**
+     * Getters for patterns
+     */
     public Pattern getFinalAndTypePattern() {
         return finalAndTypePattern;
     }
-
     public Pattern getVariablesPattern() {
         return variablesPattern;
     }
-
+    public Pattern getBooleanValuesPattern() {return booleanValuePattern;}
+    public Pattern getDoubleValuesPattern() {return doubleValuePattern;}
+    public Pattern getIntValuesPattern() {return intValuePattern;}
+    public Pattern getStringValuesPattern() {return stringValuePattern;}
+    public Pattern getCharValuesPattern() {return charValuePattern;}
 }
