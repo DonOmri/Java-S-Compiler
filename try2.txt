@@ -1,21 +1,27 @@
 //int hello =5, a = 6, b, g= "ggg";
 
+final int m = 2;
+//m =2;
+
 int a = 4;
-int d = a;
+//int a = 2;
 int c = 5;
+int d;
+char z = 'z';
 d = c;
 a = 2;
 d = 3, a= 10;
-d = 3, a= "10";
-d = 5.2, a =    6;
+//d = 3, a= "10";
+//d = 5.2, a =    6;
 
-//String b = "hi";
-//b = a;
-//a = b;
+    void foo(int z){
+//        a = "hello";
+        int a =7;
+        int a = 2;
+//        char s = z;
+        return;
+    }
 
-
-c = a;
-a = c;
-//a = 5;
-//a = "hi";
-
+//problems:
+//inside functions assignment (both types)
+//exceptions and refactoring to the verifier class

@@ -9,7 +9,7 @@ public class Sjavac {
     {
         Verifier verifier = new Verifier();
 
-        try
+        try //todo should use try with resources here
         {
             verifier.verifySjavacFile(args[0]);
             System.out.println(0);

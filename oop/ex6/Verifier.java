@@ -1,8 +1,10 @@
 package oop.ex6;
 
-import oop.ex6.Exceptions.FinalVariableException;
-import oop.ex6.Exceptions.TypeValueMismatchException;
-import oop.ex6.Exceptions.VariableException;
+import oop.ex6.Exceptions.*;
+import oop.ex6.Exceptions.VariableExceptions.DoubleVariableDeclarationException;
+import oop.ex6.Exceptions.VariableExceptions.FinalVariableException;
+import oop.ex6.Exceptions.VariableExceptions.TypeValueMismatchException;
+import oop.ex6.Exceptions.VariableExceptions.VariableException;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -27,6 +29,8 @@ public class Verifier {
     private static final int ASSIGNMENT_LENGTH = 2;
     private static final int VAR_NAME_LOCATION = 0;
     private static final int VAR_VALUE_LOCATION = 1;
+    private static final int VAR_FINAL_LOCATION = 0;
+    private static final int VAR_TYPE_LOCATION = 1;
 
     /**
      * This function receives a path to a sJavac file, and verifies its validity.
@@ -36,7 +40,7 @@ public class Verifier {
      */
     public void verifySjavacFile(String file) throws Exception {
         this.file = file;
-        this.bufferedReader = new BufferedReader(new FileReader(this.file)); // remember to close
+        this.bufferedReader = new BufferedReader(new FileReader(this.file)); // todo remember to close
         this.parser = new LineParser();
 
         //1st pass - verifies the global scope
@@ -63,7 +67,6 @@ public class Verifier {
      * @throws IOException upon IO failure
      */
     private void firstPass() throws Exception {
-        //add the global scope
         scopes.add(new Scope());
 
         //iterate over lines and create global variables and functions
@@ -75,7 +78,7 @@ public class Verifier {
                 case EMPTY:
                     break;  // ignore comments or empty lines
                 case VARIABLE:
-                    extractVariables(line);  // validate the line, and save the variable
+                    extractVariables(line);  // validate the line, and save the variables
                     break;
                 case POSSIBLE_ASSIGNMENT:
                     checkAssignmentForLine(line);
@@ -84,7 +87,7 @@ public class Verifier {
                     lineNumber = saveFunctionNameAndParams(line, lineNumber);  // save function & update cursor
                     break;
                 default:
-                    verificationFailed("global scope contained something that's not variables or function: " + parser.parseLineType(line));
+                    throw new BadLineException(line);
             }
             lineNumber++;
         }
@@ -152,10 +155,7 @@ public class Verifier {
             lineNumber++;
         }
 
-        // in case we got here, the function never ended, so the verification fails and we return some
-        // garbage value
-        verificationFailed("function that started in line" + startLine + " never ended");
-        return -1;
+        throw new UnendingFunctionException(startLine);
     }
 
     /**
@@ -178,7 +178,7 @@ public class Verifier {
      */
     private void secondPass() throws Exception {
         //iterate over functions that were saved in the 1st pass
-        for (HashMap.Entry<String, Function> entry : functions.entrySet()) {
+        for (var entry : functions.entrySet()) {
 
             // get the cursor to the start of the function
             this.bufferedReader = new BufferedReader(new FileReader(this.file));
@@ -204,7 +204,7 @@ public class Verifier {
                     case IF:
                     case WHILE:
                         scopes.add(new Scope());
-                        numScopes++;
+                        ++numScopes;
                         break;
                     case VARIABLE:
                         extractVariables(line);
@@ -218,10 +218,9 @@ public class Verifier {
                     case END_OF_SCOPE:
                         //delete the last scope from the linked list of scopes
                         scopes.remove(scopes.size() - 1);
-                        --numScopes;
 
                         //check if this was the closing } of the function scope
-                        if (numScopes == 0) {
+                        if (--numScopes == 0) {
                             //if last line was a return, continue to next function
                             if (lastReturnLineNum == lineNum - 1) {
                                 System.out.println("function " + entry.getKey() + "() is valid");
@@ -232,9 +231,11 @@ public class Verifier {
                             }
                         }
                         break;
+                    case POSSIBLE_ASSIGNMENT:
+                        checkAssignmentForLine(line);
+                        break;
                     case FUNCTION:  // it's invalid if there's another function definition
-                    case UNRECOGNIZED:  // if none of the above, the line's invalid
-                        verificationFailed("line type wasn't recognized at line " + lineNum);
+                    case UNRECOGNIZED: throw new BadLineException(line);
                 }
                 if (next_function) break;
                 lineNum++;
@@ -303,33 +304,29 @@ public class Verifier {
      * calls.
      *
      * @param line the line
-     * @throws Exception in case of a problem
+     * @throws DoubleVariableDeclarationException in case of a problem
      */
-    private void addParamsToLocalScope(String line) throws Exception {
-        // get function name
+    private void addParamsToLocalScope(String line) throws DoubleVariableDeclarationException {
         String functionName = parser.getFunctionName(line);
 
         for (Variable var : functions.get(functionName).parameters) {
             // try to add param to local scope
-            boolean success = scopes.get(scopes.size() - 1).addVariable(var);
-            if (!success) {  //this scope already has a variable with this name, which is wrong
-                verificationFailed("function parameters with the same name");
+            if (!scopes.get(scopes.size() - 1).addVariable(var))
+                throw new DoubleVariableDeclarationException(var.getName());
             }
-        }
     }
 
     /**
      * extracts new variables from a declaration line
      * @param line a syntax-wise validated line
-     * @throws IOException if a final variable wasn't assigned or a value don't match declared variable type
+     * @throws VariableException if there was a problem assigning value to a variable
      */
-    //todo currently dont throw exceptions, printerr instead
-    private void extractVariables(String line) throws Exception {
+    private void extractVariables(String line) throws VariableException {
         Matcher isFinalAndTypeMatcher = parser.getFinalAndTypePattern().matcher(line);
 
         String[] finalAndTypeAsString = extractFinalAndType(isFinalAndTypeMatcher);
-        boolean isFinal = finalAndTypeAsString[0].equals("true");
-        String type = finalAndTypeAsString[1];
+        boolean isFinal = finalAndTypeAsString[VAR_FINAL_LOCATION].equals("true");
+        String type = finalAndTypeAsString[VAR_TYPE_LOCATION];
 
         Matcher variableMatcher = parser.getVariablesPattern().matcher(
                 line.substring(isFinalAndTypeMatcher.end()));
@@ -358,16 +355,20 @@ public class Verifier {
      * @param varMatcher the matcher that detects variables
      * @param isFinal whether the variable final or not
      * @param type type of the variable
-     * @throws Exception
+     * @throws VariableException if there was a problem creating a variable
      */
-    private void extractSingleVariable(Matcher varMatcher, boolean isFinal, String type) throws VariableException {
+    private void extractSingleVariable(Matcher varMatcher, boolean isFinal, String type)
+            throws VariableException {
         String[] varFragments = varMatcher.group().replaceFirst("^\\s*", "")
                 .replaceAll("[,;=\\s]+", " ").split("\\s+");
+
+        VerifyVariableNotInScope(varFragments[VAR_NAME_LOCATION]);
 
         //if there was only one part - no assignment occurred
         if (varFragments.length == NO_ASSIGNMENT_LENGTH) {
             if (isFinal) throw new FinalVariableException(true);
-            scopes.get(scopes.size() - 1).addVariable(new Variable(type, varFragments[0], false));
+            scopes.get(scopes.size() - 1).addVariable(
+                    new Variable(type, varFragments[VAR_NAME_LOCATION], false));
         }
         //assignment occurred - compare type and value
         else if (varFragments.length == ASSIGNMENT_LENGTH) {
@@ -378,18 +379,27 @@ public class Verifier {
         }
     }
 
+    /**
+     * Verifies a declared variable has not been alreay declared in current scope
+     * @param name variable name
+     * @throws DoubleVariableDeclarationException exception if the variable was declared at current scope
+     */
+    private void VerifyVariableNotInScope(String name) throws DoubleVariableDeclarationException{
+        if (scopes.get(scopes.size() - 1).variablesMap.containsKey(name))
+            throw new DoubleVariableDeclarationException(name);
+    }
 
     /**
      * Checks assignment for an assignment line
      * @param line a line to check
      */
-    private void checkAssignmentForLine(String line) throws TypeValueMismatchException{
+    private void checkAssignmentForLine(String line) throws TypeValueMismatchException, FinalVariableException{
         Matcher variableMatcher = parser.getVariablesPattern().matcher(line);
         while (variableMatcher.find()){
             String[] varFragments = variableMatcher.group().replaceFirst("^\\s*", "").
                     replaceAll("[,;=\\s]+", " ").split("\\s+");
 
-            if (!ValidateAssignment(varFragments, GetValueType(varFragments[0]))) return;
+            ValidateAssignment(varFragments, GetValueType(varFragments[0]));
         }
     }
 
@@ -399,7 +409,7 @@ public class Verifier {
      * @return true if assignment succeeded, false otherwise
      */
     private boolean ValidateAssignment(String[] varFragments, String assignedType)
-            throws TypeValueMismatchException
+            throws TypeValueMismatchException, FinalVariableException
     {
         String assigned = varFragments[0], assignee = varFragments[1];
         String assigneeType = GetValueType(assignee);
@@ -413,8 +423,12 @@ public class Verifier {
             if (assigneeType.equals("") && scopeVariables.containsKey(assignee)) //check second var in scope
                 assigneeType = scopeVariables.get(assignee).getType();
 
-            if (!assignedType.equals("") && !assigneeType.equals("") && assignedType.equals(assigneeType))
+            if (!assignedType.equals("") && !assigneeType.equals("") && assignedType.equals(assigneeType)){
+                if (scopeVariables.get(assigned) != null && scopeVariables.get(assigned).getIsFinal())
+                    throw new FinalVariableException(false);
                 return true;
+            }
+
         }
 
         throw new TypeValueMismatchException(varFragments);
@@ -426,17 +440,11 @@ public class Verifier {
      * @return the value type, or "" if nothing fits
      */
     private String GetValueType(String assignee){
-        if(parser.getIntValuesPattern().matcher(assignee).matches()){
-            return "int";
-        } else if(parser.getDoubleValuesPattern().matcher(assignee).matches()){
-            return "double";
-        } else if(parser.getBooleanValuesPattern().matcher(assignee).matches()){
-            return "boolean";
-        } else if(parser.getStringValuesPattern().matcher(assignee).matches()){
-            return "String";
-        } else if(parser.getCharValuesPattern().matcher(assignee).matches()){
-            return "char";
-        }
+        if(parser.getIntValuesPattern().matcher(assignee).matches()) return "int";
+        else if(parser.getDoubleValuesPattern().matcher(assignee).matches()) return "double";
+        else if(parser.getBooleanValuesPattern().matcher(assignee).matches()) return "boolean";
+        else if(parser.getStringValuesPattern().matcher(assignee).matches()) return "String";
+        else if(parser.getCharValuesPattern().matcher(assignee).matches()) return "char";
         else return ""; //if nothing fits
     }
 }

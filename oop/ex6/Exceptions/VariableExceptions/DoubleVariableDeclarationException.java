@@ -1,0 +1,10 @@
+package oop.ex6.Exceptions.VariableExceptions;
+
+public class DoubleVariableDeclarationException extends VariableException {
+    private static final String DOUBLE_DECLARATION_MSG = "A variable with that name is already declared" +
+            " in this scope.\nVariable name: ";
+
+    public DoubleVariableDeclarationException(String varName){
+        super(DOUBLE_DECLARATION_MSG + varName);
+    }
+}

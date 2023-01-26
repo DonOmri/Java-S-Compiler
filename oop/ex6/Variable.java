@@ -1,7 +1,6 @@
 package oop.ex6;
 
-import oop.ex6.Exceptions.NoVariableTypeException;
-import oop.ex6.Exceptions.VariableException;
+import oop.ex6.Exceptions.VariableExceptions.NoVariableTypeException;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -10,8 +9,8 @@ import java.util.regex.Pattern;
 public class Variable {
     private static final HashMap<String, String> allowedAssignValues = new HashMap<>();
     private final String type;
-    private final boolean isFinal;
     private final String name;
+    private final boolean isFinal;
     private final HashSet<String> allowedAssignTypes = new HashSet<>();
     private boolean assigned;
 
@@ -115,19 +114,13 @@ public class Variable {
         return this.allowedAssignTypes.contains(variable.getType());
     }
 
-    //getter for type
-    public String getType() {
-        return this.type;
-    }
+    /**
+     * Getters for internal values
+     */
+    public String getType() {return this.type;}
+    public String getName() {return name;}
+    public boolean getIsFinal() {return isFinal;}
 
-    public String getName() {
-        return name;
-    }
-
-    //getter for assigned
-    public boolean wasAssigned() {
-        return this.assigned;
-    }
 
     @Override
     public String toString() {
