@@ -7,6 +7,12 @@ import java.util.HashSet;
 import java.util.regex.Pattern;
 
 public class Variable {
+    private static final String ALLOWED_INT_REGEX = "(\\-|\\+)?\\d+";
+    private static final String ALLOWED_DOUBLE_REGEX = "((\\-|\\+)?\\d+.?\\d*?)|((\\-|\\+)?\\d*.?\\d+?)";
+    private static final String ALLOWED_BOOLEAN_REGEX = "true|false|" + ALLOWED_INT_REGEX +
+            ALLOWED_DOUBLE_REGEX;
+    private static final String ALLOWED_STRING_REGEX = "\".*\"";
+    private static final String ALLOWED_CHAR_REGEX = "\'[\\S ]\'";
     private static final HashMap<String, String> allowedAssignValues = new HashMap<>();
     private final String type;
     private final String name;
@@ -14,9 +20,15 @@ public class Variable {
     private final HashSet<String> allowedAssignTypes = new HashSet<>();
     private boolean assigned;
 
-    //Constructor - called upon declaration of a variable
+    /**
+     * Constructor
+     * @param type type of variable to create
+     * @param name name of variable to create
+     * @param isFinal is the variable final
+     * @throws NoVariableTypeException double verify of the variable type
+     */
     public Variable(String type, String name, boolean isFinal) throws NoVariableTypeException {
-        if (!Pattern.compile("char|int|String|double|boolean").matcher(type).matches()) {
+        if (!LineParser.getVariableTypePattern().matcher(type).matches()) {
             throw new NoVariableTypeException(type);
         }
         this.isFinal = isFinal;
@@ -46,63 +58,40 @@ public class Variable {
     }
 
     //init regexes for allowed values to assign all types
-    private void initAllowedAssignValues() {
-
-        String allowed_for_int_regex = "(\\-|\\+)?\\d+";
-        String allowed_for_double_regex = "((\\-|\\+)?\\d+.?\\d*?)|((\\-|\\+)?\\d*.?\\d+?)";
-        String allowed_for_boolean_regex = "true|false|" + allowed_for_int_regex + allowed_for_double_regex;
-        String allowed_for_string_regex = "\".*\"";
-        String allowed_for_char_regex = "\'[\\S ]\'";
-
-        allowedAssignValues.put("int", allowed_for_int_regex);
-        allowedAssignValues.put("String", allowed_for_string_regex);
-        allowedAssignValues.put("char", allowed_for_char_regex);
-        allowedAssignValues.put("boolean", allowed_for_boolean_regex);
-        allowedAssignValues.put("double", allowed_for_double_regex);
-
+    private static void initAllowedAssignValues() {
+        allowedAssignValues.put("int", ALLOWED_INT_REGEX);
+        allowedAssignValues.put("double", ALLOWED_DOUBLE_REGEX);
+        allowedAssignValues.put("boolean", ALLOWED_BOOLEAN_REGEX);
+        allowedAssignValues.put("String", ALLOWED_STRING_REGEX);
+        allowedAssignValues.put("char", ALLOWED_CHAR_REGEX);
     }
 
-    //assign with a value
+
+    /**
+     * Assigns variable with a value
+     * @param value value to the variable (as string)
+     * @return true if succeeded, false otherwise
+     */
+
+    //todo lots of unnecessary double-checking
+    //todo should be throwing exceptions
     public boolean assign(String value) {
         //assignment to final that was already assigned
-        if (isFinal && assigned) {
-            return false;
-        }
-
-        //trying to assign with asn invalid type
-        if (!validAssignmentType(value)) {
-            return false;
-        }
-
-        //everything's ok, so assign
-        assigned = true;
-        return true;
-
+        if (!validAssignmentType(value)) return false; //wrong type-value assignment
+        return assignHelper();
     }
 
-    //assign with a variable
     public boolean assign(Variable variable) {
-        //assignment to final that was already assigned
-        if (isFinal && assigned) {
-            return false;
-        }
-
-        //assert that the variable was assigned
-        //TODO: uncomment when treating variable assignment is working
-//        if (!variable.wasAssigned()) {
-//            return false;
-//        }
-
-        //trying to assign with asn invalid type
-        if (!validAssignmentType(variable)) {
-            return false;
-        }
-
-        //everything's ok, so assign
-        assigned = true;
-        return true;
-
+        if (!validAssignmentType(variable)) return false; //wrong type-value assignment
+        if (!variable.isAssigned()) return false;
+        return assignHelper();
     }
+
+    private boolean assignHelper(){
+        if (isFinal && assigned) return false; //assignment to final
+        return assigned = true;
+    }
+
 
     //check that the type of value being assigned is valid
     private boolean validAssignmentType(String value) {
@@ -120,6 +109,7 @@ public class Variable {
     public String getType() {return this.type;}
     public String getName() {return name;}
     public boolean getIsFinal() {return isFinal;}
+    public boolean isAssigned() {return assigned;}
 
 
     @Override

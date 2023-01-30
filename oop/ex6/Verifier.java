@@ -1,6 +1,8 @@
 package oop.ex6;
 
 import oop.ex6.Exceptions.*;
+import oop.ex6.Exceptions.FunctionExceptions.DoubleFunctionDeclarationException;
+import oop.ex6.Exceptions.FunctionExceptions.UnendingFunctionException;
 import oop.ex6.Exceptions.VariableExceptions.DoubleVariableDeclarationException;
 import oop.ex6.Exceptions.VariableExceptions.FinalVariableException;
 import oop.ex6.Exceptions.VariableExceptions.TypeValueMismatchException;
@@ -14,80 +16,78 @@ import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Responsible for verifying internal logic of a line
+ */
 public class Verifier {
-
-    //holds all relevant data for each scope, including the global scope (at index 0)
-    private final ArrayList<Scope> scopes = new ArrayList<>();
-
-    //holds the function names and line number
-    private final HashMap<String, Function> functions = new HashMap<>();
-    private BufferedReader bufferedReader;
-    private String file;
-    private LineParser parser;
-
+    private static final int NONE = 0;
     private static final int NO_ASSIGNMENT_LENGTH = 1;
     private static final int ASSIGNMENT_LENGTH = 2;
     private static final int VAR_NAME_LOCATION = 0;
     private static final int VAR_VALUE_LOCATION = 1;
     private static final int VAR_FINAL_LOCATION = 0;
     private static final int VAR_TYPE_LOCATION = 1;
+    private static final int FUNC_VAR_NAME_LOCATION = 2;
+    private final ArrayList<Scope> scopes = new ArrayList<>();
+    private final HashMap<String, Function> functions = new HashMap<>();
+    private BufferedReader bufferedReader;
+    private String file;
+    private LineParser parser;
 
     /**
      * This function receives a path to a sJavac file, and verifies its validity.
      *
      * @param file a path to the sJavac file to check
-     * @throws Exception in case of problems
+     * @throws JavacException if there was a problem with a line
+     * @throws IOException if there was a problem with a file
      */
-    public void verifySjavacFile(String file) throws Exception {
+    public void verifySjavacFile(String file) throws JavacException, IOException {
         this.file = file;
-        this.bufferedReader = new BufferedReader(new FileReader(this.file)); // todo remember to close
+        this.bufferedReader = new BufferedReader(new FileReader(this.file));
         this.parser = new LineParser();
 
-        //1st pass - verifies the global scope
-        System.out.println("\n****************************************");
-        System.out.println("      first pass - global scope");
-        System.out.println("****************************************\n");
-        firstPass();
+        verifyGlobalScope(); //Verifies global scope
+        verifyInnerScopes(); //verifies internal function lines
+
+//        printAllVariables();
+
+        bufferedReader.close(); //todo move to try with resources
+    }
+
+    private void printAllVariables(){ //TODO DELETE!
         System.out.println("variables:");
         for (var variable : scopes.get(0).variablesMap.entrySet()) System.out.println(variable);
         System.out.println("\nfunctions: (num of params should be zero)");
         functions.forEach((key, value) -> System.out.println(key + " : " + value));
-
-        //2nd pass - verifies the internal lines in each function
-        System.out.println("\n****************************************");
-        System.out.println("    second pass - inside functions");
-        System.out.println("****************************************\n");
-        secondPass();
     }
 
     /**
      * Classifies each line as either comment/empty line, variable line, function line or bad line.
-     * then calls corresponding function to verify the line itself is legal
+     * then calls corresponding function to verify that the line itself is legal, and creates variables and
+     * functions correspondingly
      *
+     * @throws JavacException if line could npt be recognized, or had bad logic in it
      * @throws IOException upon IO failure
      */
-    private void firstPass() throws Exception {
+    private void verifyGlobalScope() throws JavacException, IOException {
         scopes.add(new Scope());
 
-        //iterate over lines and create global variables and functions
         String line;
         int lineNumber = 0;
         while ((line = bufferedReader.readLine()) != null) {
             switch (parser.parseLineType(line)) {
-                case COMMENT:
-                case EMPTY:
-                    break;  // ignore comments or empty lines
-                case VARIABLE:
-                    extractVariables(line);  // validate the line, and save the variables
+                case EMPTY: break; //ignore empty line
+                case COMMENT: break; //ignore comment line
+                case VARIABLE: //validate the line logic, then save variables in scope
+                    extractVariables(line);
                     break;
-                case POSSIBLE_ASSIGNMENT:
+                case POSSIBLE_ASSIGN: //validate line logic
                     checkAssignmentForLine(line);
                     break;
-                case FUNCTION:
-                    lineNumber = saveFunctionNameAndParams(line, lineNumber);  // save function & update cursor
+                case FUNCTION: //validate line logic, then save function and move to end of function
+                    lineNumber = saveFunctionReference(line, lineNumber);
                     break;
-                default:
-                    throw new BadLineException(line);
+                default: throw new BadLineException(line);
             }
             lineNumber++;
         }
@@ -95,64 +95,68 @@ public class Verifier {
 
     /**
      * This function saves the name and start line of the function, and moves the cursor to the next
-     *
-     * @param line      the line itself
-     * @param startLine the index of the start of the function
-     * @throws IOException in case there is some issue
+     * @param line the line itself
+     * @param startLine function declaration line
+     * @throws JavacException if there was a logic failure in the function declaration line
+     * @throws IOException if bufferedreader could not read a line for some reason
      */
-    private int saveFunctionNameAndParams(String line, int startLine) throws Exception {
-        // get function name
+    private int saveFunctionReference(String line, int startLine) throws JavacException, IOException {
         String functionName = parser.getFunctionName(line);
 
-        // add function to DB, unless it's already there which is wrong, so exit
-        if (functions.containsKey(functionName)) {
-            verificationFailed("function name already exists");
-        }
+        if (functions.containsKey(functionName)) throw new DoubleFunctionDeclarationException(functionName);
+
         functions.put(functionName, new Function(startLine));
 
-        // regex to match function declaration
-        Matcher matcher = Pattern.compile("\\w+\\s+\\w+\\s*\\(([^)]*)\\)").matcher(line);
-        if (!matcher.find()) {
-            verificationFailed("invalid structure of function declaration");
-        }
-
-        // else, get the parameters and split them by comma
+        Matcher matcher = parser.getFunctionLinePattern().matcher(line);
         String[] params = matcher.group(1).split(",");
+        if (params.length != 1 || !params[0].equals("")) addFunctionLineParameters(functionName, params);
 
-        // if there are any params, parse them into a variable and save them
-        if (!(params.length == 1 && params[0].equals(""))) {
-            // otherwise, trim whitespace and add each parameter to results
-            for (String param : params) {
-                String[] parts = param.trim().split("\\s+");
-                String type = parts[0];
-                String name = parts[1];
-                boolean isFinal = false;
-                if (parts.length > 2) {
-                    isFinal = true;
-                    type = parts[1];
-                    name = parts[2];
-                }
-                Variable var = new Variable(type, name, isFinal);
-                functions.get(functionName).parameters.add(var);  // add to function's parameters
-            }
+        return skipFunction(startLine);
+
+    }
+
+    /**
+     * Validates logic of parameters declaration in function declaration, and adds them into function scope
+     * @param functionName name of the function
+     * @param params parameters from within the brackets
+     * @throws JavacException if could not create a new variable for some reason
+     */
+    private void addFunctionLineParameters(String functionName, String[] params) throws JavacException{
+        for (String param : params) {
+            String[] parts = param.trim().split("\\s+");
+
+            boolean isFinal = parts.length > 2;
+            String type = parts[isFinal ? VAR_TYPE_LOCATION : VAR_TYPE_LOCATION - 1];
+            String name = parts[isFinal ? FUNC_VAR_NAME_LOCATION : FUNC_VAR_NAME_LOCATION - 1];
+
+            Variable var = new Variable(type, name, isFinal);
+
+            functions.get(functionName).parameters.add(var);  // add to function's parameters
         }
+    }
 
-        // move cursor to the next line right after the function declaration
-        int numScopes = 1, lineNumber = startLine;
+    /**
+     * Skips to an end of declared function;
+     * @param startLine the starting line of the function
+     * @return the line number after the end of the function
+     * @throws IOException if could not read a line from file for some reason
+     * @throws UnendingFunctionException if function was never closed using '}' character
+     */
+    private int skipFunction(int startLine) throws IOException, UnendingFunctionException{
+        String line;
+        int addedScopes = 1, lineNumber = startLine;
         while ((line = bufferedReader.readLine()) != null) {
             switch (parser.parseLineType(line)) {
                 case IF:
                 case WHILE:
-                    numScopes++;
+                    ++addedScopes;
                     break;
                 case END_OF_SCOPE:
-                    numScopes--;
-                    if (numScopes == 0) {
-                        return lineNumber + 1;
-                    }
+                    --addedScopes;
+                    if (addedScopes == NONE) return lineNumber + 1;
                     break;
             }
-            lineNumber++;
+            ++lineNumber;
         }
 
         throw new UnendingFunctionException(startLine);
@@ -162,21 +166,20 @@ public class Verifier {
      * This function is called when verification has failed due to syntax or logical problems.
      * It throws a proper exception.
      *
-     * @throws Exception regarding the issue verification failed
+     * @throws JavacException regarding the issue verification failed
      */
-    public void verificationFailed(String reason) throws Exception {
-        //TODO: update to throw whatever we want
-        System.err.println("Verification failed: " + reason);
-        throw new Exception();
+    public void verificationFailed(String reason) throws JavacException {
+        throw new JavacException("Verification failed: " + reason);
     }
 
     /**
      * This function iterates through all the functions found in the 1st pass, one by one, and for each function
      * validates all the internal lines of the function.
      *
-     * @throws Exception throws a proper agreed upon exception if validation fails for some reason.
+     * @throws JavacException if there was a problem with any inner line
+     * @throws IOException if problem with any file
      */
-    private void secondPass() throws Exception {
+    private void verifyInnerScopes() throws JavacException, IOException {
         //iterate over functions that were saved in the 1st pass
         for (var entry : functions.entrySet()) {
 
@@ -210,7 +213,7 @@ public class Verifier {
                         extractVariables(line);
                         break;
                     case FUNCTION_CALL:
-                        parseFunctionCall(line);
+                        verifyFunctionCall(line);
                         break;
                     case RETURN:
                         lastReturnLineNum = lineNum;
@@ -231,7 +234,7 @@ public class Verifier {
                             }
                         }
                         break;
-                    case POSSIBLE_ASSIGNMENT:
+                    case POSSIBLE_ASSIGN:
                         checkAssignmentForLine(line);
                         break;
                     case FUNCTION:  // it's invalid if there's another function definition
@@ -249,9 +252,9 @@ public class Verifier {
      * 2) the parameters sent indeed fit the parameters expected
      *
      * @param line the function call line
-     * @throws Exception if problem
+     * @throws JavacException if couldn't verify function
      */
-    private void parseFunctionCall(String line) throws Exception {
+    private void verifyFunctionCall(String line) throws JavacException {
 
         // Regular expression to match function call
         String regex = "([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(([^)]*)\\)";
@@ -382,7 +385,7 @@ public class Verifier {
     /**
      * Verifies a declared variable has not been alreay declared in current scope
      * @param name variable name
-     * @throws DoubleVariableDeclarationException exception if the variable was declared at current scope
+     * @throws DoubleVariableDeclarationException if the variable was already declared at current scope
      */
     private void VerifyVariableNotInScope(String name) throws DoubleVariableDeclarationException{
         if (scopes.get(scopes.size() - 1).variablesMap.containsKey(name))
@@ -393,7 +396,8 @@ public class Verifier {
      * Checks assignment for an assignment line
      * @param line a line to check
      */
-    private void checkAssignmentForLine(String line) throws TypeValueMismatchException, FinalVariableException{
+    private void checkAssignmentForLine(String line)
+            throws TypeValueMismatchException, FinalVariableException{
         Matcher variableMatcher = parser.getVariablesPattern().matcher(line);
         while (variableMatcher.find()){
             String[] varFragments = variableMatcher.group().replaceFirst("^\\s*", "").

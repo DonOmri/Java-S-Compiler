@@ -18,7 +18,8 @@ public class TestLineParser {
     public static final String if_stmt = "if";
     public static final String while_stmt = "while";
     public static final String variable = "variable";
-    public static final String[] checks = {comments, end_of_scope, function, function_call, return_stmt, if_stmt, while_stmt, variable};
+    public static final String assignedVariable = "assignedVariable";
+    public static final String[] checks = {comments, end_of_scope, function, function_call, return_stmt, if_stmt, while_stmt, variable, assignedVariable};
     public static final HashMap<String, LineType> map = new HashMap<>(Map.ofEntries(
             entry(comments, LineType.COMMENT),
             entry(end_of_scope, LineType.END_OF_SCOPE),
@@ -27,7 +28,8 @@ public class TestLineParser {
             entry(return_stmt, LineType.RETURN),
             entry(if_stmt, LineType.IF),
             entry(while_stmt, LineType.WHILE),
-            entry(variable, LineType.VARIABLE)
+            entry(variable, LineType.VARIABLE),
+            entry(assignedVariable, LineType.POSSIBLE_ASSIGN) //todo added by me
     ));
 
 

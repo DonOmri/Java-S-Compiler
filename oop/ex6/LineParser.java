@@ -58,8 +58,7 @@ public class LineParser {
     private static final String FUNCTION_DECLARATION_PARAMETERS = "(" + FUNCTION_DECLARATION_PARAMETER +
             "(\\s*,\\s*" + FUNCTION_DECLARATION_PARAMETER + "\\s*)*)?";
     private static final String FUNCTION_DECLARATION_END = "\\)\\s*\\{\\s*$";
-    private static final String FUNCTION_DECLARATION = FUNCTION_DECLARATION_START +
-            FUNCTION_DECLARATION_PARAMETERS + FUNCTION_DECLARATION_END;
+    private static final String FUNCTION_LINE_FOR_VARIABLES = "\\w+\\s+\\w+\\s*\\(([^)]*)\\)";
 
     /**
      * functionCallLineRegex
@@ -74,7 +73,7 @@ public class LineParser {
     /**
      * Variable Values Regex
      */
-    private static final String INT_REGEX = "(\\-|\\+)?\\d+";
+    private static final String INT_REGEX = "([-+])?\\d+";
     private static final String DOUBLE_REGEX = "((\\-|\\+)?\\d+.?\\d*?)|((\\-|\\+)?\\d*.?\\d+?)";
     private static final String BOOLEAN_REGEX = "true|false|" + INT_REGEX + DOUBLE_REGEX;
     private static final String STRING_REGEX = "\".*\"";
@@ -85,16 +84,16 @@ public class LineParser {
     /**
      * Patterns
      **/
-    private final Pattern ifLine;
-    private final Pattern whileLine;
-    private final Pattern functionLine;
-    private final Pattern variableLine;
-    private final Pattern commentLine;
-    private final Pattern emptyLine;
-    private final Pattern endOfScopeLine;
-    private final Pattern returnLine;
-    private final Pattern functionCallLine;
-    private final Pattern possibleAssignmentLine;
+    private final Pattern ifLinePattern;
+    private final Pattern whileLinePattern;
+    private final Pattern functionLinePattern;
+    private final Pattern variableLinePattern;
+    private final Pattern commentLinePattern;
+    private final Pattern emptyLinePattern;
+    private final Pattern endOfScopeLinePattern;
+    private final Pattern returnLinePattern;
+    private final Pattern functionCallLinePattern;
+    private final Pattern possibleAssignmentLinePattern;
     private final Pattern variablesPattern;
     private final Pattern finalAndTypePattern;
     private final Pattern charValuePattern;
@@ -102,74 +101,61 @@ public class LineParser {
     private final Pattern booleanValuePattern;
     private final Pattern doubleValuePattern;
     private final Pattern intValuePattern;
+    private final Pattern functionLineForVariables;
+
+    private static final Pattern variableTypePattern = Pattern.compile(VARIABLE_NAME);
 
     /**
      * Constructor
      */
     public LineParser() {
-        ifLine = Pattern.compile(IF_START + IF_CONDITIONS + IF_END);
-        whileLine = Pattern.compile(WHILE_START + WHILE_CONDITIONS + WHILE_END);
-        functionLine = Pattern.compile(FUNCTION_DECLARATION);
-        variableLine = Pattern.compile(FINAL + VARIABLE_TYPE + VARIABLE_NAME + EXTRA_VARIABLES +
+        ifLinePattern = Pattern.compile(IF_START + IF_CONDITIONS + IF_END);
+        whileLinePattern = Pattern.compile(WHILE_START + WHILE_CONDITIONS + WHILE_END);
+        functionLinePattern = Pattern.compile(FUNCTION_DECLARATION_START +
+                FUNCTION_DECLARATION_PARAMETERS + FUNCTION_DECLARATION_END);
+        variableLinePattern = Pattern.compile(FINAL + VARIABLE_TYPE + VARIABLE_NAME + EXTRA_VARIABLES +
                 END_LINE);
-        emptyLine = Pattern.compile(EMPTY_LINE);
-        commentLine = Pattern.compile(COMMENT);
-        endOfScopeLine = Pattern.compile(END_OF_SCOPE);
-        returnLine = Pattern.compile(RETURN);
-        functionCallLine = Pattern.compile(FUNCTION_START + FUNCTION_PARAMETERS + FUNCTION_END);
-        possibleAssignmentLine = Pattern.compile(POSSIBLE_ASSIGNMENT);
-
+        emptyLinePattern = Pattern.compile(EMPTY_LINE);
+        commentLinePattern = Pattern.compile(COMMENT);
+        endOfScopeLinePattern = Pattern.compile(END_OF_SCOPE);
+        returnLinePattern = Pattern.compile(RETURN);
+        functionCallLinePattern = Pattern.compile(FUNCTION_START + FUNCTION_PARAMETERS + FUNCTION_END);
+        possibleAssignmentLinePattern = Pattern.compile(POSSIBLE_ASSIGNMENT);
         variablesPattern = Pattern.compile(VARIABLE_NAME + "(?:=\\s*" + VARIABLE_VALUE +
-                ")?\\s*(?:,|;)");
+                ")?\\s*[,;]");
         finalAndTypePattern = Pattern.compile(FINAL_AND_TYPE);
         booleanValuePattern = Pattern.compile(BOOLEAN_REGEX);
         doubleValuePattern = Pattern.compile(DOUBLE_REGEX);
         intValuePattern = Pattern.compile(INT_REGEX);
         stringValuePattern = Pattern.compile(STRING_REGEX);
         charValuePattern = Pattern.compile(CHAR_REGEX);
-
+        functionLineForVariables = Pattern.compile(FUNCTION_LINE_FOR_VARIABLES);
     }
-
 
     /**
      * Returns the type of given line, based on parser regex
-     *
      * @param line the given line
      * @return LineType which is the type of the line
      */
     public LineType parseLineType(String line) {
-        if (functionLine.matcher(line).matches()) {
-            return LineType.FUNCTION;
-        } else if (commentLine.matcher(line).matches()) {
-            return LineType.COMMENT;
-        } else if (emptyLine.matcher(line).matches()) {
-            return LineType.EMPTY;
-        } else if (ifLine.matcher(line).matches()) {
-            return LineType.IF;
-        } else if (whileLine.matcher(line).matches()) {
-            return LineType.WHILE;
-        } else if (variableLine.matcher(line).matches()) {
-            return LineType.VARIABLE;
-        } else if (functionCallLine.matcher(line).matches()) {
-            return LineType.FUNCTION_CALL;
-        } else if (returnLine.matcher(line).matches()) {
-            return LineType.RETURN;
-        } else if (endOfScopeLine.matcher(line).matches()) {
-            return LineType.END_OF_SCOPE;
-        } else if (possibleAssignmentLine.matcher(line).matches()) {
-            return LineType.POSSIBLE_ASSIGNMENT;
-        } else {
-            return LineType.UNRECOGNIZED;
-        }
+        if (functionLinePattern.matcher(line).matches()) return LineType.FUNCTION;
+            else if (commentLinePattern.matcher(line).matches()) return LineType.COMMENT;
+            else if (emptyLinePattern.matcher(line).matches()) return LineType.EMPTY;
+            else if (ifLinePattern.matcher(line).matches()) return LineType.IF;
+            else if (whileLinePattern.matcher(line).matches()) return LineType.WHILE;
+            else if (variableLinePattern.matcher(line).matches()) return LineType.VARIABLE;
+            else if (functionCallLinePattern.matcher(line).matches()) return LineType.FUNCTION_CALL;
+            else if (returnLinePattern.matcher(line).matches()) return LineType.RETURN;
+            else if (endOfScopeLinePattern.matcher(line).matches()) return LineType.END_OF_SCOPE;
+            else if (possibleAssignmentLinePattern.matcher(line).matches()) return LineType.POSSIBLE_ASSIGN;
+            else return LineType.UNRECOGNIZED;
     }
 
 
     public String getFunctionName(String line){
-        assert(functionLine.matcher(line).matches());
+        assert(functionLinePattern.matcher(line).matches());
         Matcher matcher = Pattern.compile("([a-zA-Z0-9_]+)\\s*\\(").matcher(line);
-        if(!matcher.find()){
-            assert(false);
-        }
+        assert matcher.find();
         return matcher.group(1);
     }
 
@@ -187,4 +173,8 @@ public class LineParser {
     public Pattern getIntValuesPattern() {return intValuePattern;}
     public Pattern getStringValuesPattern() {return stringValuePattern;}
     public Pattern getCharValuesPattern() {return charValuePattern;}
+    public Pattern getFunctionLinePattern() {return functionLineForVariables;}
+    public static Pattern getVariableTypePattern() {return variableTypePattern;}
 }
+
+

@@ -1,0 +1,6 @@
+a=1, b="hi";
+a=14;
+a = 832, s='*';
+b="hello";
+a=b;
+b=c, a=oren, d="hello", r=1;
