@@ -7,17 +7,11 @@ import java.util.HashSet;
 import java.util.regex.Pattern;
 
 public class Variable {
-    private static final String ALLOWED_INT_REGEX = "(\\-|\\+)?\\d+";
-    private static final String ALLOWED_DOUBLE_REGEX = "((\\-|\\+)?\\d+.?\\d*?)|((\\-|\\+)?\\d*.?\\d+?)";
-    private static final String ALLOWED_BOOLEAN_REGEX = "true|false|" + ALLOWED_INT_REGEX +
-            ALLOWED_DOUBLE_REGEX;
-    private static final String ALLOWED_STRING_REGEX = "\".*\"";
-    private static final String ALLOWED_CHAR_REGEX = "\'[\\S ]\'";
-    private static final HashMap<String, String> allowedAssignValues = new HashMap<>();
+    private static final HashMap<String, String> assignValues = new HashMap<>();
     private final String type;
     private final String name;
     private final boolean isFinal;
-    private final HashSet<String> allowedAssignTypes = new HashSet<>();
+    private final HashSet<String> assignTypes = new HashSet<>();
     private boolean assigned;
 
     /**
@@ -42,65 +36,58 @@ public class Variable {
     private void initAllowedAssignTypes() {
         switch (this.type) {
             case "boolean":
-                allowedAssignTypes.add("boolean");
+                assignTypes.add("boolean");
             case "double":
-                allowedAssignTypes.add("double");
+                assignTypes.add("double");
             case "int":
-                allowedAssignTypes.add("int");
+                assignTypes.add("int");
                 break;
             case "String":
-                allowedAssignTypes.add("String");
+                assignTypes.add("String");
                 break;
             case "char":
-                allowedAssignTypes.add("char");
+                assignTypes.add("char");
                 break;
         }
     }
 
     //init regexes for allowed values to assign all types
     private static void initAllowedAssignValues() {
-        allowedAssignValues.put("int", ALLOWED_INT_REGEX);
-        allowedAssignValues.put("double", ALLOWED_DOUBLE_REGEX);
-        allowedAssignValues.put("boolean", ALLOWED_BOOLEAN_REGEX);
-        allowedAssignValues.put("String", ALLOWED_STRING_REGEX);
-        allowedAssignValues.put("char", ALLOWED_CHAR_REGEX);
+        String[] patterns = LineParser.getVariableRegexes();
+        assignValues.put("int", patterns[0]);
+        assignValues.put("double", patterns[1]);
+        assignValues.put("boolean", patterns[2]);
+        assignValues.put("String", patterns[3]);
+        assignValues.put("char", patterns[4]);
     }
 
 
     /**
      * Assigns variable with a value
      * @param value value to the variable (as string)
-     * @return true if succeeded, false otherwise
+     * @return true upon success, false otherwise
      */
 
-    //todo lots of unnecessary double-checking
-    //todo should be throwing exceptions
     public boolean assign(String value) {
-        //assignment to final that was already assigned
-        if (!validAssignmentType(value)) return false; //wrong type-value assignment
-        return assignHelper();
+        return Pattern.compile(assignValues.get(this.type)).matcher(value).matches() && assignHelper();
     }
 
+    /**
+     * Assign a value from another value
+     * @param variable the other variable to assign form
+     * @return true upon success, false otherwise
+     */
     public boolean assign(Variable variable) {
-        if (!validAssignmentType(variable)) return false; //wrong type-value assignment
-        if (!variable.isAssigned()) return false;
-        return assignHelper();
+        return this.assignTypes.contains(variable.getType()) && variable.isAssigned() && assignHelper();
     }
 
+    /**
+     * Checks whether there's an attempt to assign a new value to a final value
+     * @return true if assignment occurred, false otherwise
+     */
     private boolean assignHelper(){
         if (isFinal && assigned) return false; //assignment to final
         return assigned = true;
-    }
-
-
-    //check that the type of value being assigned is valid
-    private boolean validAssignmentType(String value) {
-        return Pattern.compile(allowedAssignValues.get(this.type)).matcher(value).matches();
-    }
-
-    //check that the type of variable being assigned is valid
-    private boolean validAssignmentType(Variable variable) {
-        return this.allowedAssignTypes.contains(variable.getType());
     }
 
     /**

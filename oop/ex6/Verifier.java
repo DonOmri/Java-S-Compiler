@@ -3,10 +3,7 @@ package oop.ex6;
 import oop.ex6.Exceptions.*;
 import oop.ex6.Exceptions.FunctionExceptions.DoubleFunctionDeclarationException;
 import oop.ex6.Exceptions.FunctionExceptions.UnendingFunctionException;
-import oop.ex6.Exceptions.VariableExceptions.DoubleVariableDeclarationException;
-import oop.ex6.Exceptions.VariableExceptions.FinalVariableException;
-import oop.ex6.Exceptions.VariableExceptions.TypeValueMismatchException;
-import oop.ex6.Exceptions.VariableExceptions.VariableException;
+import oop.ex6.Exceptions.VariableExceptions.*;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -49,7 +46,7 @@ public class Verifier {
         verifyGlobalScope(); //Verifies global scope
         verifyInnerScopes(); //verifies internal function lines
 
-//        printAllVariables();
+        printAllVariables();
 
         bufferedReader.close(); //todo move to try with resources
     }
@@ -108,6 +105,8 @@ public class Verifier {
         functions.put(functionName, new Function(startLine));
 
         Matcher matcher = parser.getFunctionLinePattern().matcher(line);
+        matcher.find(); //previously checked that this find will success
+
         String[] params = matcher.group(1).split(",");
         if (params.length != 1 || !params[0].equals("")) addFunctionLineParameters(functionName, params);
 
@@ -171,6 +170,11 @@ public class Verifier {
     public void verificationFailed(String reason) throws JavacException {
         throw new JavacException("Verification failed: " + reason);
     }
+
+
+    /************************************************************************************************/
+    /************************************************************************************************/
+    /************************************************************************************************/
 
     /**
      * This function iterates through all the functions found in the 1st pass, one by one, and for each function
@@ -319,6 +323,12 @@ public class Verifier {
             }
     }
 
+
+    /************************************************************************************************/
+    /************************************************************************************************/
+    /************************************************************************************************/
+
+
     /**
      * extracts new variables from a declaration line
      * @param line a syntax-wise validated line
@@ -362,8 +372,13 @@ public class Verifier {
      */
     private void extractSingleVariable(Matcher varMatcher, boolean isFinal, String type)
             throws VariableException {
-        String[] varFragments = varMatcher.group().replaceFirst("^\\s*", "")
+        String varLine = varMatcher.group();
+        if (varLine.contains(",,") || varLine.contains(",;")) throw new ExtraCommasException(varLine);
+
+        String[] varFragments = varLine.replaceFirst("^\\s*", "")
                 .replaceAll("[,;=\\s]+", " ").split("\\s+");
+
+        for (var frag : varFragments) System.out.println(frag);//TODO delete
 
         VerifyVariableNotInScope(varFragments[VAR_NAME_LOCATION]);
 
@@ -427,7 +442,8 @@ public class Verifier {
             if (assigneeType.equals("") && scopeVariables.containsKey(assignee)) //check second var in scope
                 assigneeType = scopeVariables.get(assignee).getType();
 
-            if (!assignedType.equals("") && !assigneeType.equals("") && assignedType.equals(assigneeType)){
+            if (!assignedType.equals("") && !assigneeType.equals("") &&
+                    isAcceptedSubType(assignedType, assigneeType)){
                 if (scopeVariables.get(assigned) != null && scopeVariables.get(assigned).getIsFinal())
                     throw new FinalVariableException(false);
                 return true;
@@ -450,5 +466,23 @@ public class Verifier {
         else if(parser.getStringValuesPattern().matcher(assignee).matches()) return "String";
         else if(parser.getCharValuesPattern().matcher(assignee).matches()) return "char";
         else return ""; //if nothing fits
+    }
+
+    /**
+     * Is current assignee type fits to assigned type?
+     * @param assignedType the type of the assigned variable
+     * @param assigneeType the type of the assignee variable
+     * @return true if fits, false otherwise
+     */
+    private boolean isAcceptedSubType(String assignedType, String assigneeType){
+        switch (assignedType){
+            case "boolean": return assigneeType.equals("boolean") || assigneeType.equals("double") ||
+                        assigneeType.equals("int");
+            case "double": return assigneeType.equals("double") || assigneeType.equals("int");
+            case "int": return assigneeType.equals("int");
+            case "String": return assigneeType.equals("String");
+            case "char": return assigneeType.equals("char");
+        }
+        return false;
     }
 }

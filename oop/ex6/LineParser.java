@@ -7,9 +7,6 @@ import java.util.regex.Pattern;
  * This class classifies a given to line to a specific type, to later be verified by the verifier class
  */
 public class LineParser {
-    //todo: use possessives (video 4)
-    //todo: increase efficiency by using ^ to search in the start of the string (relevant for any line type)
-
     /**
      * generalRegex
      **/
@@ -25,10 +22,17 @@ public class LineParser {
     private static final String FINAL = "\\s*(?:final)?\\s*"; ///todo should be + ??
     private static final String VARIABLE_TYPE = "\\s*(?:int|double|char|String|boolean)\\s+";
     private static final String VARIABLE_NAME = "\\s*(?:_\\w+|[a-zA-Z]\\w*)\\s*";
-    private static final String VARIABLE_VALUE = "\\s*\\S+\\s*";
-    private static final String EXTRA_VARIABLES = "\\s*(?:=" + VARIABLE_VALUE + "|," + VARIABLE_NAME +
-            ")*\\s*";
     private static final String FINAL_AND_TYPE = "(" + FINAL + ")" + "(" + VARIABLE_TYPE + ")";
+    private static final String INT_REGEX = "([-+])?\\d+";
+    private static final String DOUBLE_REGEX = "(([-+])?\\d+\\.?\\d*?)|(([-+])?\\d*\\.?\\d+?)";
+    private static final String BOOLEAN_REGEX = "true|false|" + INT_REGEX + DOUBLE_REGEX;
+    private static final String STRING_REGEX = "\".*\"";
+    private static final String CHAR_REGEX = "\'[\\S ]\'";
+    private static final String GENERAL_VARIABLE_VALUE = "\\s*(?:\\S+|\".*\"|\'[\\S ]\')\\s*";
+    private static final String EXTRA_VARIABLES = "\\s*(?:=" + GENERAL_VARIABLE_VALUE + "|," + VARIABLE_NAME
+            + ")*\\s*";
+    private static final String POSSIBLE_ASSIGNMENT = "(" + VARIABLE_NAME +"=\\s*(" + GENERAL_VARIABLE_VALUE + "|" +
+            VARIABLE_NAME + "),)*" + VARIABLE_NAME +"=\\s*(" + GENERAL_VARIABLE_VALUE + "|" + VARIABLE_NAME + ");\\s*";
 
     /**
      * ifLineRegex
@@ -70,16 +74,6 @@ public class LineParser {
             FUNCTION_PARAMETER + "\\s*)*)?";
     private static final String FUNCTION_END = "\\s*\\)\\s*;\\s*";
 
-    /**
-     * Variable Values Regex
-     */
-    private static final String INT_REGEX = "([-+])?\\d+";
-    private static final String DOUBLE_REGEX = "((\\-|\\+)?\\d+.?\\d*?)|((\\-|\\+)?\\d*.?\\d+?)";
-    private static final String BOOLEAN_REGEX = "true|false|" + INT_REGEX + DOUBLE_REGEX;
-    private static final String STRING_REGEX = "\".*\"";
-    private static final String CHAR_REGEX = "\'[\\S ]\'";
-    private static final String POSSIBLE_ASSIGNMENT = "(" + VARIABLE_NAME +"=\\s*(" + VARIABLE_VALUE + "|" +
-         VARIABLE_NAME + "),)*" + VARIABLE_NAME +"=\\s*(" + VARIABLE_VALUE + "|" + VARIABLE_NAME + ");\\s*";
 
     /**
      * Patterns
@@ -121,8 +115,7 @@ public class LineParser {
         returnLinePattern = Pattern.compile(RETURN);
         functionCallLinePattern = Pattern.compile(FUNCTION_START + FUNCTION_PARAMETERS + FUNCTION_END);
         possibleAssignmentLinePattern = Pattern.compile(POSSIBLE_ASSIGNMENT);
-        variablesPattern = Pattern.compile(VARIABLE_NAME + "(?:=\\s*" + VARIABLE_VALUE +
-                ")?\\s*[,;]");
+        variablesPattern = Pattern.compile(VARIABLE_NAME + "(?:=\\s*" + GENERAL_VARIABLE_VALUE + ")?\\s*[,;]");
         finalAndTypePattern = Pattern.compile(FINAL_AND_TYPE);
         booleanValuePattern = Pattern.compile(BOOLEAN_REGEX);
         doubleValuePattern = Pattern.compile(DOUBLE_REGEX);
@@ -155,19 +148,15 @@ public class LineParser {
     public String getFunctionName(String line){
         assert(functionLinePattern.matcher(line).matches());
         Matcher matcher = Pattern.compile("([a-zA-Z0-9_]+)\\s*\\(").matcher(line);
-        assert matcher.find();
+        if(!matcher.find()) assert(false);
         return matcher.group(1);
     }
 
     /**
      * Getters for patterns
      */
-    public Pattern getFinalAndTypePattern() {
-        return finalAndTypePattern;
-    }
-    public Pattern getVariablesPattern() {
-        return variablesPattern;
-    }
+    public Pattern getFinalAndTypePattern() {return finalAndTypePattern;}
+    public Pattern getVariablesPattern() {return variablesPattern;}
     public Pattern getBooleanValuesPattern() {return booleanValuePattern;}
     public Pattern getDoubleValuesPattern() {return doubleValuePattern;}
     public Pattern getIntValuesPattern() {return intValuePattern;}
@@ -175,6 +164,9 @@ public class LineParser {
     public Pattern getCharValuesPattern() {return charValuePattern;}
     public Pattern getFunctionLinePattern() {return functionLineForVariables;}
     public static Pattern getVariableTypePattern() {return variableTypePattern;}
+    public static String[] getVariableRegexes(){
+        return new String[]{INT_REGEX, DOUBLE_REGEX, BOOLEAN_REGEX, STRING_REGEX, CHAR_REGEX};
+    }
 }
 
 

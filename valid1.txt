@@ -36,8 +36,13 @@ double dbb = db;
 dd = dc;
 dc = 4.4;
 
-//dd = ia;
-//double d53 = ib;
+dd = ia;
+double d53 = ib;
+double d10 = .3;
+double d11 = 3.;
+double d12 = 2., d13 = 2., d14 = -5.0;
+double d15 = -3.;
+
 
 //boolean
 
@@ -48,15 +53,15 @@ boolean bc = 3;
 boolean bd = 3.2;
 boolean b0 = 0;
 
-//boolean be = de;
-//boolean bf = df;
-//boolean bg = ia;
-//boolean bh = ig;
+boolean be = de;
+boolean bf = df;
+boolean bg = ia;
+boolean bh = ig;
 
 final boolean b1 = true, b2 = bb;
 
-//be = de;
-//bc = b1;
+be = de;
+bc = b1;
 bb = bc;
 ba = bd;
 
@@ -66,30 +71,34 @@ String yo = "yo";
 String s = "s";
 String _0 = "_0";
 String end = ";";
-String comma = ",";
-String quote = """;
+String nothing = "";
+String space = " ";
 String func = "void";
-//String args = "(int a, boolean b)";
+String args = "(int a, boolean b)";
 
 final String s0 = "s0", s1 = "s1", s2="s2";
 
-//s = _0;
-//hey = comma;
+s = _0;
+hey = args;
+hey = space;
+space = s;
 hey = yo;
 s = yo;
 hey = s;
-//hey = s1;
+hey = s1;
 
 
 //char
 char c0 = 'c';
 char c1 = '!';
 char c2 = ';';
-char c3=''';
-char c4 = ',';
+char c3 = ' ';
 
 c0 = c1;
+c0 = c2;
 c1 = c2;
+c0 = c3;
+c3 = c1;
 
 final char c00 = '-';
 final char c01 = '{';
@@ -102,28 +111,11 @@ final char c02 = '}';
 
 
 
-//problems:
-//inside functions assignment (both types)
-
-
-//int:
-//did not recognized bad "," after variable a in: c= a, d=  a,;
-
-
-//double:
-//can't recognize assignment to double if assigned from an int variable
-
-
-//boolean:
-//can't recognize assignment to bool if assigned from an int/double variable
-//can't assign no a normal variable, a final variable (probably in all types): bc = b1;
-
-
 //String
-// could not assign value in: s = _0; (the assignment line)
-// could not assign value in: hey = comma; (the assignment line)
 // bad line here: String args = "(int a, boolean b)";
 
+
+//functions
 void foo(final int a, double b, boolean c, String d, char e){
     return;
 }
