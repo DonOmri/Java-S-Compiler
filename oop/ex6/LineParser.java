@@ -104,7 +104,6 @@ public class LineParser {
     private final Pattern doubleValuePattern;
     private final Pattern intValuePattern;
     private final Pattern functionLineForVariables;
-
     private static final Pattern variableTypePattern = Pattern.compile(VARIABLE_NAME);
 
     /**
@@ -153,6 +152,11 @@ public class LineParser {
     }
 
 
+    /**
+     * Gets function name from a given line
+     * @param line the line itself
+     * @return the function name
+     */
     public String getFunctionName(String line){
         assert(functionLinePattern.matcher(line).matches());
         Matcher matcher = Pattern.compile("([a-zA-Z0-9_]+)\\s*\\(").matcher(line);
@@ -171,11 +175,9 @@ public class LineParser {
     public Pattern getStringValuesPattern() {return stringValuePattern;}
     public Pattern getCharValuesPattern() {return charValuePattern;}
     public Pattern getFunctionLinePattern() {return functionLineForVariables;}
-    public Pattern getFunctionCallLine() {return functionCallLinePattern;}
+    public Pattern getFunctionCallLinePattern() {return functionCallLinePattern;}
     public static Pattern getVariableTypePattern() {return variableTypePattern;}
     public static String[] getVariableRegexes(){
         return new String[]{INT_REGEX, DOUBLE_REGEX, BOOLEAN_REGEX, STRING_REGEX, CHAR_REGEX};
     }
 }
-
-

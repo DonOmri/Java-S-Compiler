@@ -3,8 +3,8 @@ package oop.ex6;
 import java.util.ArrayList;
 
 public class Function {
-    public int startLine;
-    public ArrayList<Variable> parameters = new ArrayList<>();
+    private int startLine;
+    private ArrayList<Variable> parameters = new ArrayList<>();
 
     public Function(int startLine){
         this.startLine = startLine;
@@ -16,6 +16,9 @@ public class Function {
         // get parameters sent
         return true;
     }
+
+    public ArrayList<Variable> getFunctionParameters() {return parameters;}
+    public int getStartLine() {return startLine;}
 
     @Override
     public String toString() {

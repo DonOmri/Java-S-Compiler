@@ -34,20 +34,10 @@ public class Variable {
 
     //decides which assignment values are allowed, based on the type of the variable
     private void initAllowedAssignTypes() {
-        switch (this.type) {
-            case "boolean":
-                assignTypes.add("boolean");
-            case "double":
-                assignTypes.add("double");
-            case "int":
-                assignTypes.add("int");
-                break;
-            case "String":
-                assignTypes.add("String");
-                break;
-            case "char":
-                assignTypes.add("char");
-                break;
+        assignTypes.add(type);
+        if (type.equals("double") || type.equals("boolean")){
+            assignTypes.add("int");
+            assignTypes.add("double");
         }
     }
 

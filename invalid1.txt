@@ -6,6 +6,6 @@ void bar(){
     return;
 }
 
-void foo(int a){
+void foo(int a, int b, double c, final String s){
     return;
 }

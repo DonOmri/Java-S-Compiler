@@ -74,7 +74,7 @@ String end = ";";
 String nothing = "";
 String space = " ";
 String func = "void";
-String args = "(int a, boolean b)";
+String args = "(int a boolean b)";
 String sa;
 
 final String s0 = "s0", s1 = "s1", s2="s2";
@@ -147,11 +147,16 @@ void foo3(int a, int b){
     return;
 }
 
+//ggg = 3;
+
 void callOtherFunctions(){
 //    bar();
 //    foo2(5)
     int b = 3;
-    foo2(b);
+    int a = 3;
+    String zzz = "4";
+//    String a = "5";
+    foo3(5,b  )        ;
 //    foo2(b, ia);
     return;
 }

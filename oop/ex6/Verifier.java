@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Responsible for verifying internal logic of a line
@@ -144,7 +143,7 @@ public class Verifier {
 
             Variable var = new Variable(type, name, isFinal);
 
-            functions.get(functionName).parameters.add(var);  // add to function's parameters
+            functions.get(functionName).getFunctionParameters().add(var);  // add to function's parameters
         }
     }
 
@@ -182,9 +181,10 @@ public class Verifier {
      */
     private void setBufferedReaderLine(Map.Entry<String, Function> entry) throws IOException{
         this.bufferedReader = new BufferedReader(new FileReader(this.file));
-        for (int i = 0; i < entry.getValue().startLine; ++i)
+        for (int i = 0; i < entry.getValue().getStartLine(); ++i)
             bufferedReader.readLine();
     }
+
 
     /**
      * Validates a function call line - syntax and logic wise (function name exists and parameters correct)
@@ -192,46 +192,56 @@ public class Verifier {
      * @throws JavacException if function could not be verified for any reason
      */
     private void verifyFunctionCall(String line) throws JavacException {
+        Matcher functionCallMatcher = parser.getFunctionCallLinePattern().matcher(line);
 
-        // Regular expression to match function call
-        String regex = "([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(([^)]*)\\)";
-        Pattern pattern = Pattern.compile(regex);
-        Matcher matcher = pattern.matcher(line);
+        if (functionCallMatcher.find()){
+            var nameAndVariables = functionCallMatcher.group().
+                    replaceAll("^\\s*|(?:\\s*\\)\\s*;\\s*)$" ,"").split("\\(", 2);
 
-//        Matcher functiponCallMatcher = parser.get().matcher(line);
+            Function function = functions.get(nameAndVariables[0]);
+            if (function == null) throw new NoFunctionException(line);
 
-        if (matcher.find()) {
+            String[] params = nameAndVariables[1].trim().split(",");
+            if (function.getFunctionParameters().size() != params.length)
+                throw new CallParametersAmountException(line);
 
-            //check that the function exists //todo separate function name and check its existence
-            String functionName = matcher.group(1);
-            if (!functions.containsKey(functionName)) throw new NoFunctionException(line);
-            Function function = functions.get(functionName);
-
-            // get the parameters (split by comma and remove spaces) //todo gets parameters and checks them
-            String[] params = matcher.group(2).split(",");
+            //find out if the calling parameter is other variable or a value
             for (int i = 0; i < params.length; i++) {
                 params[i] = params[i].trim();
 
-                //params[i] should be a valid assignment for function.parameters[i]
-                if (function.parameters.size() <= i) throw new CallWrongParametersException(line); //todo this is when wrong type of parameters was given
-
-                //decide if it is a variable or a value - search for the variable name in all scopes
-                //then, try to assign the i'th parameter of the function with this value/parameter
-                boolean found = false;
-                boolean success = false;
-                for (int j = scopes.size() - 1; j >= 0; j--) {
-                    if (scopes.get(j).variablesMap.containsKey(params[i])) {
-                        found = true;  // it's a variable in  some outer scope
-                        Variable param = scopes.get(j).variablesMap.get(params[i]);  // get the variable
-                        success = function.parameters.get(i).assign(param);  // try to make the assignment
-                    }
+                var assignee = getValueType(params[i]);
+                if (!assignee.equals("")) { //calling param is a value
+                    var funcParameter = function.getFunctionParameters().get(i);
+                    validateAssignment(
+                            new String[]{funcParameter.getName(), params[i]}, funcParameter.getType());
                 }
-                if (!found) {
-                    success = function.parameters.get(i).assign(params[i]);
-                }
-                if (!success) throw new CallWrongParametersException(line); //todo this is when wrong parameters were given
+                else matchFunctionCallParameter(function, i, params, line); //calling param is another param
             }
         }
+    }
+
+    /**
+     * Compares one parameter from function call with the original function parameter
+     * @param function the function from which to get variables
+     * @param paramNum parameter place in order (to get correct parameter from function - order matters)
+     * @param params all current line parameters
+     * @param line the current line as string
+     * @throws CallParametersTypeException if there was a type mismatch in the call
+     * @throws VariableNotFoundException if the parameter is a variable that was never declared
+     */
+    private void matchFunctionCallParameter(Function function, int paramNum, String[] params, String line)
+            throws CallParametersTypeException, VariableNotFoundException{
+        boolean found = false;
+        for (int curScopeIndex = scopes.size() - 1; curScopeIndex >= 0; --curScopeIndex) {
+            Variable param;
+            if ((param = scopes.get(curScopeIndex).variablesMap.get(params[paramNum])) != null) {
+                if(!function.getFunctionParameters().get(paramNum).assign(param))
+                    throw new CallParametersTypeException(line);
+                found = true;
+                break;
+            }
+        }
+        if (!found) throw new VariableNotFoundException(params[paramNum]);
     }
 
     /**
@@ -240,7 +250,7 @@ public class Verifier {
      * @throws DoubleVariableDeclarationException if a variable with same name was already declared in scope
      */
     private void addParamsToLocalScope(String functionName) throws DoubleVariableDeclarationException {
-        for (var variable : functions.get(functionName).parameters) {
+        for (var variable : functions.get(functionName).getFunctionParameters()) {
             if (!scopes.get(scopes.size() - 1).addVariable(variable))
                 throw new DoubleVariableDeclarationException(variable.getName());
             }
@@ -302,7 +312,7 @@ public class Verifier {
         //assignment occurred - compare type and value
         else if (varFragments.length == ASSIGNMENT_LENGTH) {
             var newVar = new Variable(type, varFragments[VAR_NAME_LOCATION], isFinal);
-            if (!newVar.assign(varFragments[VAR_VALUE_LOCATION]) && !ValidateAssignment(varFragments, type))
+            if (!newVar.assign(varFragments[VAR_VALUE_LOCATION]) && !validateAssignment(varFragments, type))
                 throw new TypeValueMismatchException(varFragments);
             else scopes.get(scopes.size() - 1).addVariable(newVar);
         }
@@ -349,13 +359,13 @@ public class Verifier {
      * @param line a line to check
      */
     private void checkAssignmentForLine(String line)
-            throws TypeValueMismatchException, FinalVariableException{
+            throws FinalVariableException, TypeValueMismatchException, VariableNotFoundException {
         Matcher variableMatcher = parser.getVariablesPattern().matcher(line);
         while (variableMatcher.find()){
             String[] varFragments = variableMatcher.group().replaceFirst("^\\s*", "").
                     replaceAll("[,;=\\s]+", " ").split("\\s+");
 
-            ValidateAssignment(varFragments, GetValueType(varFragments[0]));
+            validateAssignment(varFragments, getValueType(varFragments[0]));
         }
     }
 
@@ -364,13 +374,12 @@ public class Verifier {
      * @param varFragments the assigned variable and assignee
      * @return true if assignment succeeded, false otherwise
      */
-    private boolean ValidateAssignment(String[] varFragments, String assignedType)
-            throws TypeValueMismatchException, FinalVariableException
-    {
+    private boolean validateAssignment(String[] varFragments, String assignedType)
+            throws FinalVariableException, TypeValueMismatchException, VariableNotFoundException {
         String assigned = varFragments[0], assignee = varFragments[1];
-        String assigneeType = GetValueType(assignee);
+        String assigneeType = getValueType(assignee);
 
-        for (int i = scopes.size()-1; i>= 0; --i){
+        for (int i = scopes.size() - 1; i >= 0; --i){
             var scopeVariables = scopes.get(i).variablesMap;
 
             if (assignedType.equals("") && scopeVariables.containsKey(assigned)) //check first var in scope
@@ -388,6 +397,7 @@ public class Verifier {
 
         }
 
+        if(assignedType.equals("")) throw new VariableNotFoundException(assigned);
         throw new TypeValueMismatchException(varFragments);
     }
 
@@ -396,7 +406,7 @@ public class Verifier {
      * @param assignee the possible value as string
      * @return the value type, or "" if nothing fits
      */
-    private String GetValueType(String assignee){
+    private String getValueType(String assignee){
         if(parser.getIntValuesPattern().matcher(assignee).matches()) return INT;
         else if(parser.getDoubleValuesPattern().matcher(assignee).matches()) return DOUBLE;
         else if(parser.getBooleanValuesPattern().matcher(assignee).matches()) return BOOLEAN;
