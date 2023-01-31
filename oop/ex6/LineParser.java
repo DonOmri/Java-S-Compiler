@@ -19,20 +19,26 @@ public class LineParser {
     /**
      * variableLineRegex
      **/
-    private static final String FINAL = "\\s*(?:final)?\\s*"; ///todo should be + ??
-    private static final String VARIABLE_TYPE = "\\s*(?:int|double|char|String|boolean)\\s+";
+    private static final String FINAL = "\\s*(?:final\\s)?\\s*";
+    private static final String VARIABLE_TYPE = "\\s*(?:int|double|boolean|String|char)\\s+";
     private static final String VARIABLE_NAME = "\\s*(?:_\\w+|[a-zA-Z]\\w*)\\s*";
     private static final String FINAL_AND_TYPE = "(" + FINAL + ")" + "(" + VARIABLE_TYPE + ")";
     private static final String INT_REGEX = "([-+])?\\d+";
     private static final String DOUBLE_REGEX = "(([-+])?\\d+\\.?\\d*?)|(([-+])?\\d*\\.?\\d+?)";
     private static final String BOOLEAN_REGEX = "true|false|" + INT_REGEX + DOUBLE_REGEX;
-    private static final String STRING_REGEX = "\".*\"";
+    private static final String STRING_REGEX = "\"[\\S ]*\"";
     private static final String CHAR_REGEX = "\'[\\S ]\'";
-    private static final String GENERAL_VARIABLE_VALUE = "\\s*(?:\\S+|\".*\"|\'[\\S ]\')\\s*";
-    private static final String EXTRA_VARIABLES = "\\s*(?:=" + GENERAL_VARIABLE_VALUE + "|," + VARIABLE_NAME
-            + ")*\\s*";
-    private static final String POSSIBLE_ASSIGNMENT = "(" + VARIABLE_NAME +"=\\s*(" + GENERAL_VARIABLE_VALUE + "|" +
-            VARIABLE_NAME + "),)*" + VARIABLE_NAME +"=\\s*(" + GENERAL_VARIABLE_VALUE + "|" + VARIABLE_NAME + ");\\s*";
+//    private static final String GENERAL_VARIABLE_VALUE = VARIABLE_NAME + "\\s*|\\s*" + INT_REGEX +
+//            "\\s*|\\s*" + DOUBLE_REGEX + "\\s*|\\s*" + BOOLEAN_REGEX + "\\s*|\\s*" + STRING_REGEX +
+//            "\\s*|\\s*" + CHAR_REGEX  + "\\s*";
+
+    private static final String GENERAL_VARIABLE_VALUE = "\\s*(?:(\\S)+|\"[\\S ]*\"|\'[\\S ]\')\\s*";
+    private static final String EXTRA_VARIABLES = "\\s*(?:=" + GENERAL_VARIABLE_VALUE + "|," +
+            VARIABLE_NAME + ")*\\s*";
+    private static final String POSSIBLE_ASSIGNMENT = VARIABLE_NAME +"=\\s*(" + GENERAL_VARIABLE_VALUE + "|" +
+            VARIABLE_NAME + ")";
+    private static final String POSSIBLE_ASSIGNMENT_LINE = "(?:" + POSSIBLE_ASSIGNMENT + ",)*" +
+            POSSIBLE_ASSIGNMENT + ";\\s*";
 
     /**
      * ifLineRegex
@@ -54,25 +60,27 @@ public class LineParser {
     private static final String WHILE_END = IF_END;
 
     /**
-     * functionDeclarationLineRegex
-     **/
-    private static final String FUNCTION_DECLARATION_START =
-            "^\\s*void\\s+([a-zA-Z]([a-zA-Z\\d_])*)\\s*\\(\\s*";
-    private static final String FUNCTION_DECLARATION_PARAMETER = FINAL + VARIABLE_TYPE + VARIABLE_NAME;
-    private static final String FUNCTION_DECLARATION_PARAMETERS = "(" + FUNCTION_DECLARATION_PARAMETER +
-            "(\\s*,\\s*" + FUNCTION_DECLARATION_PARAMETER + "\\s*)*)?";
-    private static final String FUNCTION_DECLARATION_END = "\\)\\s*\\{\\s*$";
-    private static final String FUNCTION_LINE_FOR_VARIABLES = "\\w+\\s+\\w+\\s*\\(([^)]*)\\)";
-
-    /**
      * functionCallLineRegex
      **/
-    private static final String FUNCTION_NAME = "\\s*([a-zA-Z][a-zA-Z\\d_]*)\\s*";
+    private static final String FUNCTION_NAME = "\\s*([a-zA-Z]\\w*)\\s*";
     private static final String FUNCTION_START = FUNCTION_NAME + "\\s*\\(\\s*";
     private static final String FUNCTION_PARAMETER = "\\s*(\\S+|\".*\"|\'.\')\\s*";
     private static final String FUNCTION_PARAMETERS = "(" + FUNCTION_PARAMETER + "(\\s*,\\s*" +
             FUNCTION_PARAMETER + "\\s*)*)?";
     private static final String FUNCTION_END = "\\s*\\)\\s*;\\s*";
+
+    String x = "\\s*([a-zA-Z]\\w*)\\s*" + "\\s*\\(\\s*";
+    String y = "x";
+
+    /**
+     * functionDeclarationLineRegex
+     **/
+    private static final String FUNCTION_DECLARATION_START = "^\\s*void\\s+" + FUNCTION_NAME + "\\(";
+    private static final String FUNCTION_DECLARATION_PARAMETER = FINAL + VARIABLE_TYPE + VARIABLE_NAME;
+    private static final String FUNCTION_DECLARATION_PARAMETERS =
+            "(?:" + FUNCTION_DECLARATION_PARAMETER + "(?:," + FUNCTION_DECLARATION_PARAMETER + ")*)?";
+    private static final String FUNCTION_DECLARATION_END = "\\)\\s*\\{\\s*";
+    private static final String FUNCTION_LINE_FOR_VARIABLES = "\\w+\\s+\\w+\\s*\\(([^)]*)\\)";
 
 
     /**
@@ -114,7 +122,7 @@ public class LineParser {
         endOfScopeLinePattern = Pattern.compile(END_OF_SCOPE);
         returnLinePattern = Pattern.compile(RETURN);
         functionCallLinePattern = Pattern.compile(FUNCTION_START + FUNCTION_PARAMETERS + FUNCTION_END);
-        possibleAssignmentLinePattern = Pattern.compile(POSSIBLE_ASSIGNMENT);
+        possibleAssignmentLinePattern = Pattern.compile(POSSIBLE_ASSIGNMENT_LINE);
         variablesPattern = Pattern.compile(VARIABLE_NAME + "(?:=\\s*" + GENERAL_VARIABLE_VALUE + ")?\\s*[,;]");
         finalAndTypePattern = Pattern.compile(FINAL_AND_TYPE);
         booleanValuePattern = Pattern.compile(BOOLEAN_REGEX);
@@ -163,6 +171,7 @@ public class LineParser {
     public Pattern getStringValuesPattern() {return stringValuePattern;}
     public Pattern getCharValuesPattern() {return charValuePattern;}
     public Pattern getFunctionLinePattern() {return functionLineForVariables;}
+    public Pattern getFunctionCallLine() {return functionCallLinePattern;}
     public static Pattern getVariableTypePattern() {return variableTypePattern;}
     public static String[] getVariableRegexes(){
         return new String[]{INT_REGEX, DOUBLE_REGEX, BOOLEAN_REGEX, STRING_REGEX, CHAR_REGEX};

@@ -1,1 +1,11 @@
-char c3 = ' ';
+void foo0(int a, double b, boolean c, String d, char e){
+    return;
+}
+
+void bar(){
+    return;
+}
+
+void foo(int a){
+    return;
+}

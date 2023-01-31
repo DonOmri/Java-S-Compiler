@@ -75,6 +75,7 @@ String nothing = "";
 String space = " ";
 String func = "void";
 String args = "(int a, boolean b)";
+String sa;
 
 final String s0 = "s0", s1 = "s1", s2="s2";
 
@@ -111,15 +112,163 @@ final char c02 = '}';
 
 
 
-//String
-// bad line here: String args = "(int a, boolean b)";
-
 
 //functions
-void foo(final int a, double b, boolean c, String d, char e){
-    return;
-}
 
+//declaration without variables
 void bar(){
     return;
 }
+
+void foo(int a){
+    return;
+}
+
+void ffoo(int a, int b){
+    return;
+}
+
+//declaration with variables
+void foo0(int a, double b, boolean c, String d, char e){
+    return;
+}
+
+//declaration with already defined variables
+void foo1(int ia, double da, boolean ba, String sa, char ca){
+    return;
+}
+
+//declaration with already defined variables but different types
+void foo2(double ia, String da, char ba, int sa, boolean ca){
+    return;
+}
+
+void foo3(int a, int b){
+    return;
+}
+
+void callOtherFunctions(){
+//    bar();
+//    foo2(5)
+    int b = 3;
+    foo2(b);
+//    foo2(b, ia);
+    return;
+}
+
+void allGlobalScope(){
+//int
+    int ia;
+    int ib = 5;
+    int ic, id=3;
+    int ie = 6, f;
+
+    final int ig = 5;
+    final int final = -5;
+
+    int ih = ia;
+    ib = ia;
+    ia = ib;
+    ic= ia, id=  ia;
+    ia = -3;
+
+    int ii = -0;
+    int i = 0;
+
+
+//double
+    double da = 5;
+    double db = -5;
+    double dc = 5.0;
+    double dd = -5.0;
+    double de = 3.3;
+    double df = -3.3;
+    double dg;
+    double d1, d2, d3 = -3.5, d4 = 0, d5;
+    double d6 = 0;
+    double d7 = -0;
+
+    final double dh = -5.3;
+    final double daa = da;
+
+    double dbb = db;
+    dd = dc;
+    dc = 4.4;
+
+    dd = ia;
+    double d53 = ib;
+    double d10 = .3;
+    double d11 = 3.;
+    double d12 = 2., d13 = 2., d14 = -5.0;
+    double d15 = -3.;
+
+
+//boolean
+
+    boolean ba = true;
+    boolean bb = false;
+
+    boolean bc = 3;
+    boolean bd = 3.2;
+    boolean b0 = 0;
+
+    boolean be = de;
+    boolean bf = df;
+    boolean bg = ia;
+    boolean bh = ig;
+
+    final boolean b1 = true, b2 = bb;
+
+    be = de;
+    bc = b1;
+    bb = bc;
+    ba = bd;
+
+//String
+    String hey = "hey";
+    String yo = "yo";
+    String s = "s";
+    String _0 = "_0";
+    String end = ";";
+    String nothing = "";
+    String space = " ";
+    String func = "void";
+    String args = "(int a, boolean b)";
+    String sa;
+
+    final String s0 = "s0", s1 = "s1", s2="s2";
+
+    s = _0;
+    hey = args;
+    hey = space;
+    space = s;
+    hey = yo;
+    s = yo;
+    hey = s;
+    hey = s1;
+
+
+//char
+    char c0 = 'c';
+    char c1 = '!';
+    char c2 = ';';
+    char c3 = ' ';
+
+    c0 = c1;
+    c0 = c2;
+    c1 = c2;
+    c0 = c3;
+    c3 = c1;
+
+    final char c00 = '-';
+    final char c01 = '{';
+    final char c02 = '}';
+
+
+//comment line
+// //
+////
+
+    return;
+}
+
