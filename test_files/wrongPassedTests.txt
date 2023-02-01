@@ -1,0 +1,10 @@
+boolean a17 = 17=;
+boolean a40 = =;
+//upper rows are for all variables
+
+boolean a29 = 7+7;
+boolean a47 = true = false;
+boolean a52 = t=r=u=e=;
+
+char a22 = 'a=';
+char a26 = 'a',,,, a27 = 'a';

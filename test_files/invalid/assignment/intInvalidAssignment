@@ -1,0 +1,24 @@
+int a0 = 0;
+final int a1 = 1;
+double d0 = 5.4;
+boolean b0 = true;
+String s0 = "hey";
+char c0 = 'c';
+int a2 = a0+a1;
+a1 = a0;
+int a3 = a0 = a0;
+int a4 = a1
+int a5 = d0;
+int a6 = b0;
+int a7 = s0;
+int a8 = c0;
+a0 = d0;
+a0 = b0;
+a0 = s0;
+a0 = c0;
+a0 = a0, a0 = d0;
+a0 = a10;
+a0 = "Hello"
+a0 = 5.4;
+a0 = true;
+a0 = 'c';

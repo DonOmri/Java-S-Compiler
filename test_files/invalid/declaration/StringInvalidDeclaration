@@ -1,0 +1,36 @@
+String a0 = 'a0';
+string a1 = "a1";
+String a2== " ";
+String a3 = "hey"
+String a4 = "yo;
+String a5 = yo";
+String a6 = y"o";
+String a7 = "y"o;
+String a8 = "b", a9 = ";
+String a10 = "b", a11 = "a;
+String a12 = "b", a13 = s";
+String a14 = "b", a15 = "s"s;
+String a16 = "b", a17 = true;
+String a 18 = "k";
+String "a19" = "hey";
+String a"20" = "20";
+"String" a21 = "a21";
+String a22 = "a22"=;
+final String a23 = 'a0';
+final string a24 = "a1";
+final String a25== " ";
+final String a26 = "hey"
+final String a27 = "yo;
+final String a28 = yo";
+final String a29 = y"o";
+final String a30 = "y"o;
+final String a31 = "b", a32 = ";
+final String a33 = "b", a34 = "a;
+final String a35 = "b", a36 = s";
+final String a37 = "b", a38 = "s"s;
+final String a39 = "b", a40 = true;
+final String a 41 = "k";
+final String "a42" = "hey";
+final String a"43" = "20";
+final "String" a44 = "a21";
+final String a45 = "a22"=;

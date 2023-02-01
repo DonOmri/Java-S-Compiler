@@ -1,0 +1,4 @@
+        //
+        // hello
+int a = 5; // hello
+void foo(int z){ //comment

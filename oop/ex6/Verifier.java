@@ -64,6 +64,65 @@ public class Verifier {
         functions.forEach((key, value) -> System.out.println(key + " : " + value));
     }
 
+    public void testsFunctionHelper(String file, BufferedReader bufferedReader){
+        this.file = file;
+        this.bufferedReader = bufferedReader;
+        this.parser = new LineParser();
+    }
+
+    public void testsFunction() throws IOException{
+        /***********************GLOBAL SCOPE***********************/
+        int failedTests = 0;
+        scopes.add(new Scope());
+
+        String line;
+        int lineNum = 0;
+
+        while ((line = bufferedReader.readLine()) != null)
+            try{
+                lineNum = globalScopeFactory(line, lineNum) + 1;
+                System.out.println("Test passed in line " + lineNum);
+            }
+            catch (JavacException e){
+                System.err.println("in line: " + ++lineNum + ": " + e.getClass());
+                ++failedTests;
+            }
+        /***********************INNER SCOPES***********************/
+        var failedInnerLines = 0;
+        var innerLines = 0;
+        for (var entry : functions.entrySet()) {
+            scopes.add(new Scope()); //add function scope
+
+            setBufferedReaderLine(entry); // get bufferedReader to start of function
+            String line2 = bufferedReader.readLine(); //get function declaration line
+            try{
+                addParamsToLocalScope(parser.getFunctionName(line2));  //add function parameters to it's scope
+            }
+            catch (JavacException e){
+                System.err.println(e.getMessage());
+            }
+
+            int lineNum2 = 1, lastReturnLineNumber = -1;
+            while ((line2 = bufferedReader.readLine()) != null) {
+                try{
+                    innerLines++;
+                    lastReturnLineNumber = innerScopesFactory(line2, lineNum2++, lastReturnLineNumber);
+                    if (lastReturnLineNumber == FUNCTION_END_CUE) break;
+                }
+                catch (JavacException e){
+                    failedInnerLines++;
+                    System.err.println("INNER SCOPE FAIL in line: " + (lineNum2 + entry.getValue().getStartLine()) + ": " + e.getClass());
+                }
+
+            }
+        }
+        /*********************************************************/
+        System.out.println("***************************************\n\t\t\tTotal lines: " + lineNum +
+                "\n\t\t\tValid lines: " + (lineNum - failedTests) + "\n\t\t\tInvalid lines: " + failedTests +
+                "\nInner lines failed: " + failedInnerLines +
+                " from total of " + innerLines + "\n***************************************\n");
+    }
+
     /**
      * Classifies each line as either comment/empty line, variable line, function line or bad line.
      * then calls corresponding function to verify that the line itself is legal, and creates variables and
