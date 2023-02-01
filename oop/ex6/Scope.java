@@ -2,7 +2,6 @@ package oop.ex6;
 
 import java.util.HashMap;
 
-
 /**
  * This class holds entire data for a certain scope
  */

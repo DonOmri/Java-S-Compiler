@@ -21,6 +21,9 @@ public class Verifier {
     private static final String BOOLEAN = "boolean";
     private static final String STRING = "String";
     private static final String CHAR = "char";
+    private static final String TRUE = "true";
+    private static final String FALSE = "false";
+    private static final String FINAL = "final";
     private static final int FUNCTION_END_CUE = -2;
     private static final int NONE = 0;
     private static final int NO_ASSIGNMENT_LENGTH = 1;
@@ -43,17 +46,15 @@ public class Verifier {
      * @throws JavacException if there was a problem with a line
      * @throws IOException if there was a problem with a file
      */
-    public void verifySjavacFile(String file) throws JavacException, IOException {
+    public void verifySjavacFile(String file, BufferedReader bufferedReader) throws JavacException, IOException {
         this.file = file;
-        this.bufferedReader = new BufferedReader(new FileReader(this.file));
+        this.bufferedReader = bufferedReader;
         this.parser = new LineParser();
 
-        verifyGlobalScope(); //Verifies global scope
+        verifyGlobalScope();
         verifyInnerScopes(); //verifies internal function lines
 
 //        printAllVariables();
-
-        bufferedReader.close(); //todo move to try with resources
     }
 
     private void printAllVariables(){ //TODO DELETE!
@@ -75,10 +76,9 @@ public class Verifier {
         scopes.add(new Scope());
 
         String line;
-        int lineNumber = 0;
+        int lineNum = 0;
 
-        while ((line = bufferedReader.readLine()) != null)
-            lineNumber = globalScopeFactory(line, lineNumber) + 1;
+        while ((line = bufferedReader.readLine()) != null) lineNum = globalScopeFactory(line, lineNum) + 1;
     }
 
     /**
@@ -94,36 +94,33 @@ public class Verifier {
             String line = bufferedReader.readLine(); //get function declaration line
             addParamsToLocalScope(parser.getFunctionName(line));  //add function parameters to it's scope
 
-            int lineNumber = 1, lastReturnLineNumber = -1;
+            int lineNum = 1, lastReturnLineNumber = -1;
             while ((line = bufferedReader.readLine()) != null) {
-                lastReturnLineNumber = innerScopesFactory(line, lineNumber++, lastReturnLineNumber);
+                lastReturnLineNumber = innerScopesFactory(line, lineNum++, lastReturnLineNumber);
                 if (lastReturnLineNumber == FUNCTION_END_CUE) break;
             }
         }
     }
 
     /**
-     * This function saves the name and start line of the function, and moves the cursor to the next
-     * @param line the line itself
+     * Saves function name and start line, and moves the cursor to line after function closing curly bracket
+     * @param line the function declaration line
      * @param startLine function declaration line
      * @throws JavacException if there was a logic failure in the function declaration line
      * @throws IOException if bufferedreader could not read a line for some reason
      */
     private int saveFunctionReference(String line, int startLine) throws JavacException, IOException {
         String functionName = parser.getFunctionName(line);
-
         if (functions.containsKey(functionName)) throw new DoubleFunctionDeclarationException(functionName);
 
         functions.put(functionName, new Function(startLine));
-
         Matcher matcher = parser.getFunctionLinePattern().matcher(line);
-        matcher.find(); //previously checked that this find will success
+        if(!matcher.find()) throw new BadLineException(line);
 
         String[] params = matcher.group(1).split(",");
         if (params.length != 1 || !params[0].equals("")) addFunctionLineParameters(functionName, params);
 
         return skipFunction(startLine);
-
     }
 
     /**
@@ -157,21 +154,17 @@ public class Verifier {
     private int skipFunction(int startLine) throws IOException, UnendingFunctionException{
         String line;
         int addedScopes = 1, lineNumber = startLine;
+
         while ((line = bufferedReader.readLine()) != null) {
-            switch (parser.parseLineType(line)) {
-                case IF:
-                case WHILE:
-                    ++addedScopes;
-                    break;
-                case END_OF_SCOPE:
-                    --addedScopes;
-                    if (addedScopes == NONE) return lineNumber + 1;
-                    break;
-            }
+            LineType lineType = parser.parseLineType(line);
+
+            if(lineType.equals(LineType.IF) || lineType.equals(LineType.WHILE)) ++addedScopes;
+            else if (lineType.equals(LineType.END_OF_SCOPE))
+                if (--addedScopes == NONE) return lineNumber + 1;
+
             ++lineNumber;
         }
-
-        throw new UnendingFunctionException(startLine);
+        throw new UnendingFunctionException(startLine); //the first scope was never closed
     }
 
     /**
@@ -180,9 +173,8 @@ public class Verifier {
      * @throws IOException if bufferedReader could not read line for some reason
      */
     private void setBufferedReaderLine(Map.Entry<String, Function> entry) throws IOException{
-        this.bufferedReader = new BufferedReader(new FileReader(this.file));
-        for (int i = 0; i < entry.getValue().getStartLine(); ++i)
-            bufferedReader.readLine();
+        bufferedReader = new BufferedReader(new FileReader(this.file));
+        for (int i = 0; i < entry.getValue().getStartLine(); ++i) bufferedReader.readLine();
     }
 
 
@@ -196,7 +188,7 @@ public class Verifier {
 
         if (functionCallMatcher.find()){
             var nameAndVariables = functionCallMatcher.group().
-                    replaceAll("^\\s*|(?:\\s*\\)\\s*;\\s*)$" ,"").split("\\(", 2);
+                    replaceAll("^\\s*|(\\s*\\)\\s*;\\s*)$" ,"").split("\\(", 2);
 
             Function function = functions.get(nameAndVariables[0]);
             if (function == null) throw new NoFunctionException(line);
@@ -208,8 +200,8 @@ public class Verifier {
             //find out if the calling parameter is other variable or a value
             for (int i = 0; i < params.length; i++) {
                 params[i] = params[i].trim();
-
                 var assignee = getValueType(params[i]);
+
                 if (!assignee.equals("")) { //calling param is a value
                     var funcParameter = function.getFunctionParameters().get(i);
                     validateAssignment(
@@ -231,21 +223,19 @@ public class Verifier {
      */
     private void matchFunctionCallParameter(Function function, int paramNum, String[] params, String line)
             throws CallParametersTypeException, VariableNotFoundException{
-        boolean found = false;
         for (int curScopeIndex = scopes.size() - 1; curScopeIndex >= 0; --curScopeIndex) {
             Variable param;
             if ((param = scopes.get(curScopeIndex).variablesMap.get(params[paramNum])) != null) {
                 if(!function.getFunctionParameters().get(paramNum).assign(param))
                     throw new CallParametersTypeException(line);
-                found = true;
-                break;
+                return;
             }
         }
-        if (!found) throw new VariableNotFoundException(params[paramNum]);
+        throw new VariableNotFoundException(params[paramNum]);
     }
 
     /**
-     * Receives a function name and adds it's parameters to correct scope
+     * Receives a function name and adds its parameters to correct scope
      * @param functionName name of the function to add parameters to
      * @throws DoubleVariableDeclarationException if a variable with same name was already declared in scope
      */
@@ -253,7 +243,7 @@ public class Verifier {
         for (var variable : functions.get(functionName).getFunctionParameters()) {
             if (!scopes.get(scopes.size() - 1).addVariable(variable))
                 throw new DoubleVariableDeclarationException(variable.getName());
-            }
+        }
     }
 
     /**
@@ -265,7 +255,7 @@ public class Verifier {
         Matcher isFinalAndTypeMatcher = parser.getFinalAndTypePattern().matcher(line);
 
         String[] finalAndTypeAsString = extractFinalAndType(isFinalAndTypeMatcher);
-        boolean isFinal = finalAndTypeAsString[VAR_FINAL_LOCATION].equals("true");
+        boolean isFinal = finalAndTypeAsString[VAR_FINAL_LOCATION].equals(TRUE);
         String type = finalAndTypeAsString[VAR_TYPE_LOCATION];
 
         Matcher variableMatcher = parser.getVariablesPattern().matcher(
@@ -283,10 +273,10 @@ public class Verifier {
         String[] finalAndType = new String[2];
         if (matcher.find()) {
             String[] isFinalAndType = matcher.group().replaceFirst("^\\s+", "").split("\\s+");
-            finalAndType[0] = isFinalAndType[0].equals("final") ? "true" : "false";
-            finalAndType[1] = finalAndType[0].equals("true") ? isFinalAndType[1] : isFinalAndType[0];
+            finalAndType[VAR_FINAL_LOCATION] = isFinalAndType[0].equals(FINAL) ? TRUE : FALSE;
+            finalAndType[VAR_TYPE_LOCATION] = finalAndType[VAR_FINAL_LOCATION].equals(TRUE) ?
+                    isFinalAndType[1] : isFinalAndType[0];
         }
-
         return finalAndType;
     }
 
@@ -312,6 +302,7 @@ public class Verifier {
         //assignment occurred - compare type and value
         else if (varFragments.length == ASSIGNMENT_LENGTH) {
             var newVar = new Variable(type, varFragments[VAR_NAME_LOCATION], isFinal);
+
             if (!newVar.assign(varFragments[VAR_VALUE_LOCATION]) && !validateAssignment(varFragments, type))
                 throw new TypeValueMismatchException(varFragments);
             else scopes.get(scopes.size() - 1).addVariable(newVar);
@@ -394,7 +385,6 @@ public class Verifier {
                     throw new FinalVariableException(false);
                 return true;
             }
-
         }
 
         if(assignedType.equals("")) throw new VariableNotFoundException(assigned);
@@ -412,7 +402,7 @@ public class Verifier {
         else if(parser.getBooleanValuesPattern().matcher(assignee).matches()) return BOOLEAN;
         else if(parser.getStringValuesPattern().matcher(assignee).matches()) return STRING;
         else if(parser.getCharValuesPattern().matcher(assignee).matches()) return CHAR;
-        else return ""; //if nothing fits
+        else return ""; //Its a possible variable
     }
 
     /**

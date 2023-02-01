@@ -3,8 +3,8 @@ package oop.ex6;
 import java.util.ArrayList;
 
 public class Function {
-    private int startLine;
-    private ArrayList<Variable> parameters = new ArrayList<>();
+    private final int startLine;
+    private final ArrayList<Variable> parameters = new ArrayList<>();
 
     public Function(int startLine){
         this.startLine = startLine;

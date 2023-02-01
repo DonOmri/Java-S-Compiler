@@ -10,8 +10,8 @@ public class Variable {
     private static final HashMap<String, String> assignValues = new HashMap<>();
     private final String type;
     private final String name;
-    private final boolean isFinal;
     private final HashSet<String> assignTypes = new HashSet<>();
+    private final boolean isFinal;
     private boolean assigned;
 
     /**
@@ -32,7 +32,9 @@ public class Variable {
         initAllowedAssignValues();
     }
 
-    //decides which assignment values are allowed, based on the type of the variable
+    /**
+     * Decides which assignment values are allowed, based on the type of the variable
+     */
     private void initAllowedAssignTypes() {
         assignTypes.add(type);
         if (type.equals("double") || type.equals("boolean")){
@@ -41,7 +43,9 @@ public class Variable {
         }
     }
 
-    //init regexes for allowed values to assign all types
+    /**
+     * Initializes regexes for allowed values to assign all types
+     */
     private static void initAllowedAssignValues() {
         String[] patterns = LineParser.getVariableRegexes();
         assignValues.put("int", patterns[0]);
