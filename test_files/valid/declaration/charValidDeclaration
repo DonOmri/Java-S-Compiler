@@ -1,0 +1,18 @@
+char a0;
+char a1 = '';
+char a2 = ' ';
+char a3 = '!';
+char a4 = '1';
+char a5 = 'a';
+char a6 = ';';
+char a7 = 'w', a8 = '';
+char a9, a10 = ' ';
+char a11 = '', a12, a13 = '?', a14=     ' ';
+final char a01 = '';
+final char a02 = ' ';
+final char a03 = '!';
+final char a04 = '1';
+final char a05 = 'a';
+final char a06 = ';';
+final char a07 = 'w', a08 = '';
+final char a011 = '', a013 = '?', a014=     ' ';

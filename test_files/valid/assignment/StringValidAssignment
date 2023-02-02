@@ -1,0 +1,9 @@
+String a0 = " ";
+String a1 = "hey";
+final String a2 = "final";
+a0 = a0;
+a0 = a1;
+a0 = a2;
+a0 = "new ";
+a0 = a1, a1 = a2;
+a1 = a0, a0 = a2;

@@ -27,7 +27,7 @@ public class LineParser {
     private static final String DOUBLE_REGEX = "(([-+])?\\d+\\.?\\d*?)|(([-+])?\\d*\\.?\\d+?)";
     private static final String BOOLEAN_REGEX = "true|false|" + INT_REGEX + DOUBLE_REGEX;
     private static final String STRING_REGEX = "\"[\\S ]*\"";
-    private static final String CHAR_REGEX = "\'[\\S ]\'";
+    private static final String CHAR_REGEX = "\'[\\S ]?\'";
 //    private static final String GENERAL_VARIABLE_VALUE = VARIABLE_NAME + "\\s*|\\s*" + INT_REGEX +
 //            "\\s*|\\s*" + DOUBLE_REGEX + "\\s*|\\s*" + BOOLEAN_REGEX + "\\s*|\\s*" + STRING_REGEX +
 //            "\\s*|\\s*" + CHAR_REGEX  + "\\s*";

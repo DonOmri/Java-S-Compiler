@@ -1,8 +1,0 @@
-void foo(boolean b){
-    return;
-}
-
-void f1(int a, final char c){
-    foo(true);
-    return;
-}

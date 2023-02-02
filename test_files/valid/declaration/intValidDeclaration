@@ -1,0 +1,13 @@
+int a2 = 5;
+int a3 = -2;
+int a10 = +0;
+int a12;
+int a15 = 5, a16 = 5;
+int a18 = -5, a19 = -5;
+int a21 = +5, a22 = +5;
+final int a02 = 5;
+final int a03 = -2;
+final int a010 = +0;
+final int a015 = 5, a016 = 5;
+final int a018 = -5, a019 = -5;
+final int a021 = +5, a022 = +5;

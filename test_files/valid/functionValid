@@ -1,0 +1,116 @@
+void f0(){
+    return;
+}
+
+void f1(int a, double b, boolean c, String d, char e){
+    f1(a, b, c, d, e);
+    return;
+}
+
+int a;
+double b;
+boolean c;
+String d;
+char e;
+
+void f2(){
+    int a =0;
+    double b;
+            boolean c = true;
+    final String d="hello";
+        final char = 'c';
+    return;
+}
+
+void f3(){
+    double a =0;
+            boolean b;
+    int c = 1;
+            final String d ="hello";
+    final    char    = 'c';
+    return;
+}
+
+void f4(){
+    int aa = a;
+    final double bb = b;
+    boolean cc = c;
+    String dd = d;
+    char ee = e;
+    return;
+}
+
+void f5(){
+    int aa = a;
+    final double bb = b;
+        boolean cc = c;
+        String dd = d;
+        char ee = e;
+    f2();
+    f1(aa, bb, cc, dd, ee);
+    f1(a, b, c, d, e);
+    f5();
+    return;
+}
+
+void f6(){
+    if(true){
+        return;
+    }
+    while(true){
+        return;
+    }
+    if(false){
+            return;
+        }
+        while(false){
+            return;
+        }
+
+    int a = 0, b = 5, c=0;
+
+    if(a == b){
+        c = 2;
+        b = false;
+    }
+    while(a == b){
+            c = 2;
+        b = false;
+        }
+    if(a != b){
+            c = 2;
+            b = false;
+        }
+        while(a != b){
+                c = 2;
+            b = false;
+            }
+    if(b == true){
+        b = false;
+    }
+    if(b == false){
+            b = false;
+        }
+    while(b == true){
+            b = false;
+        }
+    while(b == false){
+            b = false;
+        }
+    return;
+}
+
+void f7(){
+//nested if while loops
+return;
+}
+
+void f8(){
+//assignments of variables in different scopes
+return;
+}
+
+void f9(){
+//same as f8,but also call functions with those variables
+return;
+}

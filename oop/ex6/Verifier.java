@@ -84,7 +84,8 @@ public class Verifier {
                 System.out.println("Test passed in line " + lineNum);
             }
             catch (JavacException e){
-                System.err.println("in line: " + ++lineNum + ": " + e.getClass());
+//                System.err.println("in line: " + ++lineNum + ": " + e.getClass());
+                ++lineNum;
                 ++failedTests;
             }
         /***********************INNER SCOPES***********************/
@@ -99,7 +100,7 @@ public class Verifier {
                 addParamsToLocalScope(parser.getFunctionName(line2));  //add function parameters to it's scope
             }
             catch (JavacException e){
-                System.err.println(e.getMessage());
+//                System.err.println(e.getMessage());
             }
 
             int lineNum2 = 1, lastReturnLineNumber = -1;
@@ -111,7 +112,7 @@ public class Verifier {
                 }
                 catch (JavacException e){
                     failedInnerLines++;
-                    System.err.println("INNER SCOPE FAIL in line: " + (lineNum2 + entry.getValue().getStartLine()) + ": " + e.getClass());
+//                    System.err.println("INNER SCOPE FAIL in line: " + (lineNum2 + entry.getValue().getStartLine()) + ": " + e.getClass());
                 }
 
             }
