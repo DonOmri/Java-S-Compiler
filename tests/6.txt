@@ -1,0 +1,8 @@
+void foo(){
+    return;
+}
+
+void badCall(){
+	foo(15);
+	return;
+}

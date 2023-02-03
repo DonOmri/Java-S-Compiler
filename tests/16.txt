@@ -1,0 +1,8 @@
+
+void foo(){
+	while(int a == 0){
+		//do stuff
+	}
+	return;
+}
+

@@ -1,0 +1,141 @@
+omriaviv
+oren_gerc
+
+Design & non trivial decisions:
+
+	The verification of an sJavac file is made in 2 main stages:
+	1) Determining the type of a given line (a variable declaration, function call, if statement, etc).
+	2) Verifying the inner logic of the line (assignment between variables of the same type, function call
+	   with right number of parameters, etc).
+	The class that's in charge of verifying correct line structure is LineParser.
+	The class that's in charge of verifying correct line structure is Verifier.
+	In order to complete the exercise demands, we created another classes & enum (Variable, Function, Scope
+	& LineType) in order to hold the data and the components of a given sJavac file.
+	This code structure very strongly implements the principle of encapsulation, as learned in class:
+	    - Variable class saves all data related to a declared variable, in any scope - including its name,
+	      type, whether its final, etc.
+	    - Function class saves all data related to a declared function - its parameters, name, etc.
+	    - Scope class helps us divide our declared variables into their scopes. each variable is saved in a
+	      scope object's HashMap, for best efficiency.
+	    - LineType (enum) helps us define the types of lines that could be written to our program.
+	      All not allowed lines (such as float variables, nested function declarations, etc) are classified
+	      as LineType.UNRECOGNIZED.
+
+	Algorithm-wise, we iterated once over the entire files, and another time on each function.
+	The first pass (made in Verifier's verifyGlobalScope method) is responsible for:
+	    - Recognizing global scope variables declaration and assignment lines
+	    - Verifying inner logic of such lines (e.g a double value assigned to int declared variable, an
+	      assignment with a variable that doesn't exist. etc)
+	    - Recognizing function declaration lines
+	    - Verifying the function declaration lines logic (not the inner function scope)
+	    - Save both variables and functions in dedicated reachable locations, for future use
+	    - Throw an exception for any wrong syntax or bad logic during each of previous stages
+	The second pass (mad in Verifier's verifyInnerScopes) is responsible for:
+	    - Iterating over saved function, and verifying their inner logic
+	    - Verifying the correct number and type of curly brackets (e.g {} )
+	    - Verifying each function ends with a return; statement
+	    - Verifying correct syntax and basic logic of if and while, as required in PDF
+
+	This design was used since there was no significance to the order of which the functions are called,
+	hence we had to create a database for all functions, and then verify their calls.
+	
+	Project Structure:
+
+	oop.ex6:
+        main:
+            Sjavac.java
+            Verifier.java
+            LineParser.java
+            FunctionExceptions:
+                CallParametersAmountException.java
+                CallParametersTypeException.java
+                DoubleFunctionDeclarationException.java
+                FunctionException.java
+                InnerFunctionDeclarationException.java
+                NoFunctionException.java
+                NoReturnException.java
+                UnendingFunctionException.java
+            VariableExceptions:
+                DoubleVariableDeclarationException.java
+                ExtraCommasException.java
+                FinalVariableException.java
+                NoVariableTypeException.java
+                TypeValueMismatchException.java
+                VariableException.java
+                VariableNotFoundException.java
+            BadLineException.java
+            JavacException.java
+        Utils:
+            LineType.java
+            Function.java
+            Scope.java
+            Variable.java
+
+
+
+Answers to section 6:
+
+    6.1 - Exceptions:
+        We implemented our own sub-exceptions, each for a specific error we might get during the process.
+        The basic exception we used is sJavacException, which extends Java's Exception class.
+        We created 2 main types of sub-exceptions: FunctionException and VariableException, each extends
+        sJavacException. Both sub-exceptions has many sub-sub exceptions, to specify the exact error in the
+        file.
+        The implementation of out own exception system made out debugging process much easier.
+        Plus, it makes it much more understandable for future users to understand what went wrong in file.
+
+    6.2 - Object Oriented Design:
+        1) Modifying code for more variable types, would require minor changes in LineParser regexes,
+        as well as in the Verifier's isAcceptedSubType method (to create the "hierarchy" between variable
+        types).
+        2) Different method return types would be implemented by changing the allowed function regex from
+        void solemnly, to more types (e.g int). The scopes factories will take care of the rest.
+        Plus, we would need a compare function, that compares the declared function return type to it's
+        actual return type. The return statement regex will have to change and be able to contain a value or
+         a variable afterwards.
+        3)  Using methods of standard java would require an addition of:
+            - the regexes of those methods (as well as getters, setters, patterns, etc. as in LineParser)
+            - a function to check each new method internal syntax and logic (e.g System.out.println can't
+            print a non-existing variable)
+            -change in factories, to create the "ability" for the verifier to act according to new methods
+
+    6.3 - Regular Expressions:
+        As you can see in LineParser class, we used a lot of regexes for all purposes of catching different
+        segments of the given text.
+        Two of our most used regular expressions were:
+            - POSSIBLE ASSIGNMENT (used to catch a line segment that contains a valid assignment syntax,
+             that still needs to be logically verified):
+
+            private static final String POSSIBLE_ASSIGNMENT = VARIABLE_NAME +"=\\s*(" +
+            GENERAL_VARIABLE_VALUE + "|" + VARIABLE_NAME + ")";
+            or:
+            private static final String POSSIBLE_ASSIGNMENT =
+            "\\s*(?:_\\w+|[a-zA-Z]\\w*)\\s*=\\s*(((\\s*\"[\\S ]*\"\\s*)|(\\s*'[\\S ]?'\\s*)|(\\s*(true|false)
+            |(\\s*[-+]?((\\d+\\.?\\d*)|(\\.\\d+))\\s*)\\s*))|\\s*(?:_\\w+|[a-zA-Z]\\w*)\\s*)
+
+            - VARIABLE TYPE (used to catch all types of variables in the sJavac PDF requirements):
+
+            private static final String VARIABLE_TYPE = "\\s*(?:int|double|boolean|String|char)\\s+";
+
+
+Short description for the requirement that each test file checks:
+	1)	Trying to assign an assigned final variable with another variable.
+	2)	Invalid operator (+) between 2 variables.
+	3)	Trying to assign String with a boolean variable.
+	4)	Invalid assignment of String with double, when it's the 2nd assignment in the same line. 
+	5)	Assigning a string with "" should succeed. 
+	6)	Calling a function with the wrong number of parameters. 
+	7)	Calling a function with wrong type of parameters. 
+	8)	Calling a function that doesn't exist. 
+	9)	No condition inside () of 'if'. 
+	10)	Invalid condition inside () of 'if' - ends with "&&". 
+	11)	Unrecognized condition inside () of 'if' - bad parameters used as condition. 
+	12)	Function doesn't end with '}'. 
+	13)	Function has no return statement.
+	14)	New scope doesn't start with '{'.
+	15)	Appearance of ';' with no context, just in a line by itself. 
+	16)	Illegal variable declaration inside a while condition.
+	17)	Invalid function declaration - parameters end with ','.
+	18)	Recursive function call - should be valid. 
+	19)	Invalid declaration of a variable - typo in the type. 
+	20)	No space between type and name of a variable in declaration. 

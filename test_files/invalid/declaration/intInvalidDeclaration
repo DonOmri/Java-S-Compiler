@@ -34,3 +34,7 @@ int a37 = 37, a38 =38,,, a39=39;
 int a40 = =;
 int =a41 = 41;
 int
+int;
+int a42 = 7+7;
+int final a43 = 43;
+finalint a44 =44;

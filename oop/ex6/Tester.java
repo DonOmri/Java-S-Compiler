@@ -1,5 +1,7 @@
 package oop.ex6;
 
+import oop.ex6.main.Verifier;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -18,14 +20,14 @@ public class Tester {
             "invalid/declaration/commentInvalidDeclaration",
             "invalid/declaration/functionInvalidDeclaration",
 
-            "invalid/assignment/intInvalidAssignment",
-            "invalid/assignment/doubleInvalidAssignment",
-            "invalid/assignment/booleanInvalidAssignment",
-            "invalid/assignment/StringInvalidAssignment",
-            "invalid/assignment/charInvalidAssignment",
+            "invalid/assignment/intInvalidAssignment--7",
+            "invalid/assignment/doubleInvalidAssignment--6",
+            "invalid/assignment/booleanInvalidAssignment--5",
+            "invalid/assignment/StringInvalidAssignment--7",
+            "invalid/assignment/charInvalidAssignment--7",
 
-            "invalid/functionInvalidCall",
-            "invalid/generalInvalidLines",
+//            "invalid/functionInvalidCall",
+            "invalid/generalInvalidLines--1",
 
             //validation tests:
             "valid/declaration/intValidDeclaration",
@@ -41,7 +43,7 @@ public class Tester {
             "valid/assignment/StringValidAssignment",
             "valid/assignment/charValidAssignment",
 
-            "valid/functionValid",
+//            "valid/functionValid",
     };
 
 

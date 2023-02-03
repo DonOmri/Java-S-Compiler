@@ -1,0 +1,3 @@
+String a0 = "hey";
+final String a1 = "1";
+a1 = a0;

@@ -37,3 +37,7 @@ double a42 = .;
 double a43 = 5.5, a44 = .;
 double a45 = .5.5;
 double
+double;
+double a46 = 7+7;
+double final a47 = 47;
+finaldouble a48 = 48;

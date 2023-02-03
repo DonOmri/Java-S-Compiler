@@ -1,8 +1,5 @@
 package oop.ex6.main;
 
-import oop.ex6.Exceptions.JavacException;
-import oop.ex6.Verifier;
-
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -21,7 +18,7 @@ public class Sjavac {
             verifier.verifySjavacFile(args[0], bufferedReader);
             System.out.println(SUCCESS_CODE);
         }
-        catch (JavacException e)
+        catch (SjavacException e)
         {
             System.err.println(e.getMessage());
             System.out.println(JAVAC_FAIL_CODE);

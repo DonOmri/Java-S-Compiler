@@ -85,28 +85,59 @@ void f6(){
                 c = 2;
             b = false;
             }
-    if(b == true){
-        b = false;
+    if(c == true){
+        c = false;
     }
-    if(b == false){
-            b = false;
+    if(c == false){
+            c = false;
         }
-    while(b == true){
-            b = false;
+    while(c == true){
+            c = false;
         }
-    while(b == false){
-            b = false;
+    while(c == false){
+            c = false;
         }
     return;
 }
 
 void f7(){
-//nested if while loops
+    if(b ==  5.5){
+        if(b != 5.3){
+            int zzz = 3;
+            if{zzz== 2){
+                zzz = 1;
+            }
+        }
+    }
+    if(a == 5){
+        if( c == false){
+            int c = 4;
+            if (c == 4){
+                return;
+            }
+        }
+    }
+    while(b ==  5.5){
+            if(b != 5.3){
+                int zzz = 3;
+                if{zzz== 2){
+                    zzz = 1;
+                }
+            }
+        }
+    while(a == 5){
+        if( c == false){
+            int c = 4;
+            if (c == 4){
+                return;
+            }
+        }
+    }
 return;
 }
 
 void f8(){
-//assignments of variables in different scopes
+//assignments of variables in different scopes with if-while
 return;
 }
 

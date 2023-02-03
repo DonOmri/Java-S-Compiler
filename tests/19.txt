@@ -1,0 +1,2 @@
+in a = 15;
+Strng s = "hello";

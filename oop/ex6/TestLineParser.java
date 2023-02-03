@@ -1,5 +1,8 @@
 package oop.ex6;
 
+import oop.ex6.main.LineParser;
+import oop.ex6.utils.LineType;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
