@@ -1,5 +1,9 @@
-//int i0 = 5, i1 = 3;
-//int i2 = i0;
-String a2 = "hell", a3 = "world";
-String a4 = a2;
-String a5 = a3;
+int a;
+void f0(){
+    a = 5;
+    return;
+}
+void f1(){
+    int b = a;
+    return;
+}

@@ -43,23 +43,15 @@ public class LineParser {
             POSSIBLE_ASSIGNMENT + ";\\s*";
 
     /**
-     * ifLineRegex
+     * ifWhileLineRegex
      **/
-    private static final String IF_START = "^\\s*if\\s*\\(\\s*";
-    private static final String NUMBER = "-?\\d+(.\\d+)?";
-    private static final String IF_CONDITION = "\\s*(" + VARIABLE_NAME + "|true|false|" + NUMBER + ")\\s*";
+    private static final String IF_WHILE_CONDITION = "(?:(?:" + BOOLEAN_VALUE + ")|(?:" + VARIABLE_NAME +
+            "(?:\\s*(?:==|!=)\\s* " + GENERAL_VARIABLE_VALUE + ")?))\\s*";
     private static final String AND_OR_CONDITION = "\\s*(\\|\\||&&)\\s*";
-    private static final String IF_CONDITIONS = IF_CONDITION + "(" + AND_OR_CONDITION + IF_CONDITION + ")*";
-    private static final String IF_END = "\\s*\\)\\s*\\{\\s*";
-
-    /**
-     * whileLineRegex
-     **/
-    private static final String WHILE_START = "^\\s*while\\s*\\(\\s*";
-    private static final String WHILE_CONDITION = IF_CONDITION;
-    private static final String WHILE_CONDITIONS = WHILE_CONDITION + "(" + AND_OR_CONDITION +
-            WHILE_CONDITION + ")*";
-    private static final String WHILE_END = IF_END;
+    private static final String IF_WHILE_START = "\\s*(?:if|while)\\s*\\(\\s*";
+    private static final String IF_WHILE_END = "\\s*\\)\\s*\\{\\s*";
+    private static final String IF_WHILE_LINE = IF_WHILE_START + IF_WHILE_CONDITION + "(?:" +
+            AND_OR_CONDITION + IF_WHILE_CONDITION + ")*" + IF_WHILE_END;
 
     /**
      * functionCallLineRegex
@@ -85,8 +77,7 @@ public class LineParser {
     /**
      * Patterns
      **/
-    private final Pattern ifLinePattern;
-    private final Pattern whileLinePattern;
+    private final Pattern ifWhileLinePattern;
     private final Pattern functionLinePattern;
     private final Pattern variableLinePattern;
     private final Pattern commentLinePattern;
@@ -110,8 +101,7 @@ public class LineParser {
      * Constructor
      */
     public LineParser() {
-        ifLinePattern = Pattern.compile(IF_START + IF_CONDITIONS + IF_END);
-        whileLinePattern = Pattern.compile(WHILE_START + WHILE_CONDITIONS + WHILE_END);
+        ifWhileLinePattern = Pattern.compile(IF_WHILE_LINE);
         functionLinePattern = Pattern.compile(FUNCTION_DECLARATION_START +
                 FUNCTION_DECLARATION_PARAMETERS + FUNCTION_DECLARATION_END);
         variableLinePattern = Pattern.compile(FINAL + VARIABLE_TYPE + VARIABLE_NAME + EXTRA_VARIABLES +
@@ -142,8 +132,7 @@ public class LineParser {
         if (functionLinePattern.matcher(line).matches()) return LineType.FUNCTION;
             else if (commentLinePattern.matcher(line).matches()) return LineType.COMMENT;
             else if (emptyLinePattern.matcher(line).matches()) return LineType.EMPTY;
-            else if (ifLinePattern.matcher(line).matches()) return LineType.IF;
-            else if (whileLinePattern.matcher(line).matches()) return LineType.WHILE;
+            else if (ifWhileLinePattern.matcher(line).matches()) return LineType.IF_WHILE;
             else if (variableLinePattern.matcher(line).matches() && !nonBooleanValue.matcher(line).find())
                 return LineType.VARIABLE;
             else if (functionCallLinePattern.matcher(line).matches()) return LineType.FUNCTION_CALL;

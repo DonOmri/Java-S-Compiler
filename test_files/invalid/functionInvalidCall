@@ -1,19 +1,33 @@
 void f0(){
     return;
 }
-
 void f1(int a){
     return;
 }
-
 void f2(double b, String s){
     return;
 }
-
 int a0 = 0;
 double a1 = 0.0;
 String a2 = "s";
-
+final int a00 = 0;
+final double a10 = 0.0;
+final boolean a20 = true;
+final String a30 = "sasd";
+final char a40 = 'w';
+void finalChangedInside(final int c0, final double c1, final boolean c2, final String c3, final char c4){
+    c0 = 3;
+    c1 = 4.4;
+    c2 = false;
+    c3 = "hey";
+    c4 = 'w';
+    a00 = 3;
+    a10 = 4.4;
+    a20 = false;
+    a30 = "hey";
+    a40 = 'w';
+    return;
+}
 void badCalls(){
     int b0 = 0;
     double b1 = 0.0;
@@ -34,6 +48,49 @@ void badCalls(){
     f2(5.4, 'c');
     f2("s", 1.1);
     f0(){
+    void f0(){
+    void f123(){
 
     return;
+}
+
+void ifWhileWithFakeParams(){
+
+    String z0 = "hey";
+    char z1 = 'w';
+
+    if (z0){
+        return;
+    }
+    while(z0){
+        return;
+    }
+    if (z1){
+        return;
+    }
+    while(z1){
+        return;
+    }
+    if (z01){
+    //non existing variable
+    }
+        return;
+    }
+    while(z01){
+    //non existing variable
+    }
+        return;
+    }
+    if (z0 && z1){
+        return;
+    }
+    while(z0 && z1){
+        return;
+    }
+    if (z0 || z1){
+        return;
+    }
+    while(z0 || z1){
+        return;
+    }
 }

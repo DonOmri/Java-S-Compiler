@@ -7,18 +7,18 @@ void f1(int a, double b, boolean c, String d, char e){
     return;
 }
 
-int a;
-double b;
-boolean c;
-String d;
-char e;
+int a = 1;
+double b = 1.1;
+boolean c = 1.111;
+String d = "hey";
+char e = 't';
 
 void f2(){
     int a =0;
     double b;
             boolean c = true;
     final String d="hello";
-        final char = 'c';
+        final char s = 'c';
     return;
 }
 
@@ -27,7 +27,7 @@ void f3(){
             boolean b;
     int c = 1;
             final String d ="hello";
-    final    char    = 'c';
+    final    char   s = 'c';
     return;
 }
 
@@ -49,6 +49,8 @@ void f5(){
     f2();
     f1(aa, bb, cc, dd, ee);
     f1(a, b, c, d, e);
+    f1(aa, 3.3, -4, dd, ee);
+    f1(1,1,1,"geye dsfh", 'w');
     f5();
     return;
 }
@@ -71,31 +73,31 @@ void f6(){
 
     if(a == b){
         c = 2;
-        b = false;
+        b = 3;
     }
     while(a == b){
             c = 2;
-        b = false;
+        b = 2;
         }
     if(a != b){
             c = 2;
-            b = false;
+            b = 3;
         }
         while(a != b){
                 c = 2;
-            b = false;
+            b = 1;
             }
     if(c == true){
-        c = false;
+        c = 4;
     }
     if(c == false){
-            c = false;
+            c = 1;
         }
     while(c == true){
-            c = false;
+            c = -4;
         }
     while(c == false){
-            c = false;
+            c = 00;
         }
     return;
 }
@@ -104,7 +106,7 @@ void f7(){
     if(b ==  5.5){
         if(b != 5.3){
             int zzz = 3;
-            if{zzz== 2){
+            if(zzz== 2){
                 zzz = 1;
             }
         }
@@ -118,9 +120,9 @@ void f7(){
         }
     }
     while(b ==  5.5){
-            if(b != 5.3){
+            if (b != 5.3){
                 int zzz = 3;
-                if{zzz== 2){
+                if(zzz== 2){
                     zzz = 1;
                 }
             }
@@ -137,11 +139,48 @@ return;
 }
 
 void f8(){
-//assignments of variables in different scopes with if-while
-return;
+    int a= 5;
+    double b = 12;
+    String c = " hey";
+
+        if(a == 5 && b != 12 && c != 124 || a != 0 || b== 235){
+            int c = 6;
+            while (c != "hwety" && b == 124 || a != 5){
+                double a = 3;
+            }
+        }
+    return;
 }
 
 void f9(){
+    if(a && b != 123){
+        return;
+    }
+    return;
+}
+
+
+void f10(){
+//assignments of variables in different scopes with if-while
+//multi if while
+
+int a= 5;
+double b = 12;
+String c = " hey";
+
+    if(a == 5 && b != 12){
+        int c = 6;
+        while (c != "hwety" && b == 124 || a != 5){
+            double a = 3;
+        }
+        if(a && b!= 123){
+            return;
+        }
+    }
+return;
+}
+
+void f11(){
 //same as f8,but also call functions with those variables
 return;
 }

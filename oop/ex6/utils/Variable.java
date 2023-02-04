@@ -95,6 +95,12 @@ public class Variable {
     public boolean getIsFinal() {return isFinal;}
     public boolean getIsAssigned() {return isAssigned;}
 
+    /**
+     * Setter for isAssigned field
+     */
+    public void assignVariable(){
+        isAssigned = true;
+    }
 
     @Override
     public String toString() {

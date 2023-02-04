@@ -26,7 +26,6 @@ public class Tester {
             "invalid/assignment/StringInvalidAssignment--7",
             "invalid/assignment/charInvalidAssignment--7",
 
-//            "invalid/functionInvalidCall",
             "invalid/generalInvalidLines--1",
 
             //validation tests:
@@ -42,24 +41,29 @@ public class Tester {
             "valid/assignment/booleanValidAssignment",
             "valid/assignment/StringValidAssignment",
             "valid/assignment/charValidAssignment",
+    };
 
-//            "valid/functionValid",
+    private static final String[] funcFiles = new String[]{
+//            "invalid/functionInvalidCall",
+            "valid/functionValid",
+
     };
 
 
     public static void main(String[] args)
     {
-        for(var file : files){
-            System.out.println(String.format(s1, file));
-            try(BufferedReader bufferedReader = new BufferedReader(new FileReader(pre + file)))
-            {
-                Verifier verifier = new Verifier();
-                verifier.testsFunctionHelper(file, bufferedReader);
-                verifier.testsFunction();
-            }
-            catch (IOException e) {System.err.println(e.getMessage());}
+//        for(var file : files) mainHelper(file);
+        for (var file : funcFiles) mainHelper(file);
+    }
+
+    private static void mainHelper(String file){
+        System.out.println(String.format(s1, file));
+        try(BufferedReader bufferedReader = new BufferedReader(new FileReader(pre + file)))
+        {
+            Verifier verifier = new Verifier();
+            verifier.testsFunctionHelper(file, bufferedReader);
+            verifier.testsFunction();
         }
-
-
+        catch (IOException e) {System.err.println(e.getMessage());}
     }
 }

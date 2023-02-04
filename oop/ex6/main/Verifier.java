@@ -56,6 +56,7 @@ public class Verifier {
         this.parser = new LineParser();
 
         verifyGlobalScope();
+        System.out.println("GLOBAL SCOPE VERIFIED"); //todo DELETE
         verifyInnerScopes(); //verifies internal function lines
 
         printAllVariables();
@@ -98,7 +99,9 @@ public class Verifier {
         for (var entry : functions.entrySet()) {
             scopes.add(new Scope()); //add function scope
 
-            setBufferedReaderLine(entry); // get bufferedReader to start of function
+            bufferedReader = new BufferedReader(new FileReader("test_files/" + this.file));
+            for (int i = 0; i < entry.getValue().getStartLine(); ++i) {bufferedReader.readLine();}
+
             String line2 = bufferedReader.readLine(); //get function declaration line
             try{
                 addParamsToLocalScope(parser.getFunctionName(line2));  //add function parameters to it's scope
@@ -116,7 +119,7 @@ public class Verifier {
                 }
                 catch (SjavacException e){
                     failedInnerLines++;
-//                    System.err.println("INNER SCOPE FAIL in line: " + (lineNum2 + entry.getValue().getStartLine()) + ": " + e.getClass());
+                    System.err.println("INNER SCOPE FAIL in line: " + (lineNum2 + entry.getValue().getStartLine()) + ": " + e.getClass());
                 }
 
             }
@@ -222,7 +225,7 @@ public class Verifier {
         while ((line = bufferedReader.readLine()) != null) {
             LineType lineType = parser.parseLineType(line);
 
-            if(lineType.equals(LineType.IF) || lineType.equals(LineType.WHILE)) ++addedScopes;
+            if(lineType.equals(LineType.IF_WHILE)) ++addedScopes;
             else if (lineType.equals(LineType.END_OF_SCOPE))
                 if (--addedScopes == NONE) return lineNumber + 1;
 
@@ -254,11 +257,13 @@ public class Verifier {
             var nameAndVariables = functionCallMatcher.group().
                     replaceAll("^\\s*|(\\s*\\)\\s*;\\s*)$" ,"").split("\\(", 2);
 
-            Function function = functions.get(nameAndVariables[0]);
-            if (function == null) throw new NoFunctionException(line);
+            Function calledFunction = functions.get(nameAndVariables[0]);
+            if (calledFunction == null) throw new NoFunctionException(line);
 
             String[] params = nameAndVariables[1].trim().split(",");
-            if (function.getFunctionParameters().size() != params.length)
+            if(params[0].equals("")) params = new String[]{};
+
+            if (calledFunction.getFunctionParameters().size() != params.length)
                 throw new CallParametersAmountException(line);
 
             //find out if the calling parameter is other variable or a value
@@ -267,11 +272,11 @@ public class Verifier {
                 var assignee = getValueType(params[i]);
 
                 if (!assignee.equals("")) { //calling param is a value
-                    var funcParameter = function.getFunctionParameters().get(i);
+                    var funcParameter = calledFunction.getFunctionParameters().get(i);
                     validateAssignment(
-                            new String[]{funcParameter.getName(), params[i]}, funcParameter.getType());
+                            new String[]{funcParameter.getName(), params[i]}, funcParameter.getType(), true);
                 }
-                else matchFunctionCallParameter(function, i, params, line); //calling param is another param
+                else matchFunctionCallParameter(calledFunction, i, params, line); //calling param is another param
             }
         }
     }
@@ -315,7 +320,8 @@ public class Verifier {
      * @param line a syntax-wise validated line
      * @throws VariableException if there was a problem assigning value to a variable
      */
-    private void extractVariables(String line) throws VariableException, BadLineException {
+    private void extractVariables(String line, boolean fromWithin)
+            throws VariableException, BadLineException {
         Matcher isFinalAndTypeMatcher = parser.getFinalAndTypePattern().matcher(line);
 
         String[] finalAndTypeAsString = extractFinalAndType(isFinalAndTypeMatcher);
@@ -327,7 +333,7 @@ public class Verifier {
 
         if (!variableMatcher.find()) throw new BadLineException(line);
         do{
-            extractSingleVariable(variableMatcher, isFinal, type);
+            extractSingleVariable(variableMatcher, isFinal, type, fromWithin);
         }
         while (variableMatcher.find());
     }
@@ -355,7 +361,7 @@ public class Verifier {
      * @param type type of the variable
      * @throws VariableException if there was a problem creating a variable
      */
-    private void extractSingleVariable(Matcher varMatcher, boolean isFinal, String type)
+    private void extractSingleVariable(Matcher varMatcher, boolean isFinal, String type, boolean fromWithin)
             throws VariableException {
         String[] varFragments = getFragmentsByType(varMatcher.group(), type);
 
@@ -371,7 +377,8 @@ public class Verifier {
         else if (varFragments.length == ASSIGNMENT_LENGTH) {
             var newVar = new Variable(type, varFragments[VAR_NAME_LOCATION], isFinal, true);
 
-            if (!newVar.assign(varFragments[VAR_VALUE_LOCATION]) && !validateAssignment(varFragments, type))
+            if (!newVar.assign(varFragments[VAR_VALUE_LOCATION]) &&
+                    !validateAssignment(varFragments, type, fromWithin))
                 throw new TypeValueMismatchException(varFragments);
             else scopes.get(scopes.size() - 1).addVariable(newVar);
         }
@@ -417,7 +424,8 @@ public class Verifier {
      * Checks assignment for an assignment line
      * @param line a line to check
      */
-    private void checkAssignmentForLine(String line) throws VariableException, BadLineException {
+    private void checkAssignmentForLine(String line, boolean fromWithin)
+            throws VariableException, BadLineException {
         Matcher variableMatcher = parser.getVariablesPattern().matcher(line);
 
         if(!variableMatcher.find()) throw new BadLineException(line);
@@ -426,7 +434,7 @@ public class Verifier {
                     replaceAll("[,;=\\s]+", " ").split("\\s+", 2);
             if(varFragments.length == 1) throw new BadLineException(line);
 
-            validateAssignment(varFragments, getValueType(varFragments[0]));
+            validateAssignment(varFragments, getValueType(varFragments[0]), fromWithin);
         }
         while (variableMatcher.find());
     }
@@ -441,7 +449,7 @@ public class Verifier {
      * @throws TypeValueMismatchException if assignee type could not be assigned into assigned variable
      * @throws VariableNotFoundException if either the assigned or assignee variables wre not found
      */
-    private boolean validateAssignment(String[] varFragments, String assignedType)
+    private boolean validateAssignment(String[] varFragments, String assignedType, boolean fromWithin)
             throws VariableException {
         String assigned = varFragments[0], assignee = varFragments[1];
         String assigneeType = getValueType(assignee);
@@ -460,8 +468,11 @@ public class Verifier {
 
             if (!assignedType.equals("") && !assigneeType.equals("") &&
                     isAcceptedSubType(assignedType, assigneeType)){
-                if (scopeVariables.get(assigned) != null && scopeVariables.get(assigned).getIsFinal())
+
+                var assignedVariable = scopeVariables.get(assigned);
+                if (assignedVariable != null && assignedVariable.getIsFinal())
                     throw new FinalVariableException(false);
+                if (!fromWithin && assignedVariable != null) assignedVariable.assignVariable();
                 return true;
             }
         }
@@ -515,10 +526,10 @@ public class Verifier {
             case EMPTY: break; //ignore empty line
             case COMMENT: break; //ignore comment line
             case VARIABLE: //validate the line logic, then save variables in scope
-                extractVariables(line);
+                extractVariables(line, false);
                 break;
             case POSSIBLE_ASSIGN: //validate line logic
-                checkAssignmentForLine(line);
+                checkAssignmentForLine(line, false);
                 break;
             case FUNCTION: //validate line logic, then save function and move to end of function
                 lineNumber = saveFunctionReference(line, lineNumber);
@@ -538,12 +549,11 @@ public class Verifier {
      */
     private int innerScopesFactory(String line, int lineNumber, int lastReturnLine) throws SjavacException {
         switch (parser.parseLineType(line)) {
-            case IF:
-            case WHILE:
+            case IF_WHILE:
                 scopes.add(new Scope());
                 break;
             case VARIABLE:
-                extractVariables(line);
+                extractVariables(line, true);
                 break;
             case FUNCTION_CALL:
                 verifyFunctionCall(line);
@@ -558,7 +568,7 @@ public class Verifier {
                 if (lastReturnLine == lineNumber - 1) return FUNCTION_END_CUE;
                 else throw new NoReturnException(lineNumber - 1);
             case POSSIBLE_ASSIGN:
-                checkAssignmentForLine(line);
+                checkAssignmentForLine(line, true);
                 break;
             case FUNCTION: throw new InnerFunctionDeclarationException(lineNumber);
             case UNRECOGNIZED: throw new BadLineException(line);
