@@ -6,7 +6,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * This class classifies a given to line to a specific type, to later be verified by the verifier class
+ * This class classifies a given line to a specific type, to later be verified by the verifier class
  */
 public class LineParser {
     /**
@@ -135,15 +135,14 @@ public class LineParser {
             else if (commentLinePattern.matcher(line).matches()) return LineType.COMMENT;
             else if (emptyLinePattern.matcher(line).matches()) return LineType.EMPTY;
             else if (ifWhileLinePattern.matcher(line).matches()) return LineType.IF_WHILE;
-            else if (variableLinePattern.matcher(line).matches() && !nonBooleanValuePattern.matcher(line).find())
-                return LineType.VARIABLE;
+            else if (variableLinePattern.matcher(line).matches() &&
+                !nonBooleanValuePattern.matcher(line).find()) return LineType.VARIABLE;
             else if (functionCallLinePattern.matcher(line).matches()) return LineType.FUNCTION_CALL;
             else if (returnLinePattern.matcher(line).matches()) return LineType.RETURN;
             else if (endOfScopeLinePattern.matcher(line).matches()) return LineType.END_OF_SCOPE;
             else if (possibleAssignmentLinePattern.matcher(line).matches()) return LineType.POSSIBLE_ASSIGN;
             else return LineType.UNRECOGNIZED;
     }
-
 
     /**
      * Gets function name from a given line

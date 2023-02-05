@@ -1,5 +1,8 @@
 package oop.ex6.utils;
 
+/**
+ * This enum classifies the possible line types the sJavac can parse
+ */
 public enum LineType {
     COMMENT,
     VARIABLE,

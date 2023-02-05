@@ -29,5 +29,4 @@ public class Scope {
     public HashMap<String, Variable> getVariablesMap(){
         return variablesMap;
     }
-
 }

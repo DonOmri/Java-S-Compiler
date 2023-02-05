@@ -7,6 +7,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.regex.Pattern;
 
+/**
+ * This class holds data for a single variable
+ */
 public class Variable {
     private static final HashMap<String, String> assignValues = new HashMap<>();
     private final String type;
@@ -20,6 +23,7 @@ public class Variable {
      * @param type type of variable to create
      * @param name name of variable to create
      * @param isFinal is the variable final
+     * @param isAssigned whether the variable is already assigned or not
      * @throws NoVariableTypeException double verify of the variable type
      */
     public Variable(String type, String name, boolean isFinal, boolean isAssigned)
@@ -58,13 +62,11 @@ public class Variable {
         assignValues.put("char", patterns[4]);
     }
 
-
     /**
      * Assigns variable with a value
      * @param value value to the variable (as string)
      * @return true upon success, false otherwise
      */
-
     public boolean assign(String value) {
         return Pattern.compile(assignValues.get(this.type)).matcher(value).matches() && assignHelper();
     }

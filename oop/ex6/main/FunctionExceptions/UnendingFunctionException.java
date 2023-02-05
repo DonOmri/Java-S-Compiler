@@ -1,10 +1,11 @@
 package oop.ex6.main.FunctionExceptions;
 
 public class UnendingFunctionException extends FunctionException {
-    private static final String ERR_MSG_PRE = "UnendingFunctionException:\nFunction that started in line ";
-    private static final String ERR_MSG_POST = " Never Ended.";
+    private static final String UNENDING_FUNC_ERR_MSG = "UnendingFunctionException: Function that started" +
+            " in line %s Never ended";
+
 
     public UnendingFunctionException(int lineNumber){
-        super(ERR_MSG_PRE + lineNumber + ERR_MSG_POST);
+        super(String.format(UNENDING_FUNC_ERR_MSG, lineNumber));
     }
 }

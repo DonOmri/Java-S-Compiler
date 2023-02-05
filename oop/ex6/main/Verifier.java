@@ -18,7 +18,7 @@ import java.util.regex.Matcher;
 /**
  * Responsible for verifying internal logic of a line
  */
-public class Verifier {
+class Verifier {
     private static final String DOUBLE = "double";
     private static final String INT = "int";
     private static final String BOOLEAN = "boolean";
@@ -57,77 +57,6 @@ public class Verifier {
 
         verifyGlobalScope();
         verifyInnerScopes(); //verifies internal function lines
-
-        printAllVariables();
-    }
-
-    private void printAllVariables(){ //TODO DELETE!
-        System.out.println("variables:");
-        for (var variable : scopes.get(0).getVariablesMap().entrySet()) System.out.println(variable);
-        System.out.println("\nfunctions: (num of params should be zero)");
-        functions.forEach((key, value) -> System.out.println(key + " : " + value));
-    }
-
-    public void testsFunctionHelper(String file, BufferedReader bufferedReader){ //todo DELETE
-        this.file = file;
-        this.bufferedReader = bufferedReader;
-        this.parser = new LineParser();
-    }
-
-    public void testsFunction() throws IOException{ //todo DELETE
-        /***********************GLOBAL SCOPE***********************/
-        int failedTests = 0;
-        scopes.add(new Scope());
-
-        String line;
-        int lineNum = 0;
-
-        while ((line = bufferedReader.readLine()) != null)
-            try{
-                lineNum = globalScopeFactory(line, lineNum) + 1;
-                System.out.println("Test passed in line " + lineNum);
-            }
-            catch (SjavacException e){
-//                System.err.println("in line: " + ++lineNum + ": " + e.getClass());
-                ++lineNum;
-                ++failedTests;
-            }
-        /***********************INNER SCOPES***********************/
-        var failedInnerLines = 0;
-        var innerLines = 0;
-        for (var entry : functions.entrySet()) {
-            scopes.add(new Scope()); //add function scope
-
-            bufferedReader = new BufferedReader(new FileReader("test_files/" + this.file));
-            for (int i = 0; i < entry.getValue().getStartLine(); ++i) {bufferedReader.readLine();}
-
-            String line2 = bufferedReader.readLine(); //get function declaration line
-            try{
-                addParamsToLocalScope(parser.getFunctionName(line2));  //add function parameters to it's scope
-            }
-            catch (SjavacException e){
-//                System.err.println(e.getMessage());
-            }
-
-            int lineNum2 = 1, lastReturnLineNumber = -1;
-            while ((line2 = bufferedReader.readLine()) != null) {
-                try{
-                    innerLines++;
-                    lastReturnLineNumber = innerScopesFactory(line2, lineNum2++, lastReturnLineNumber);
-                    if (lastReturnLineNumber == FUNCTION_END_CUE) break;
-                }
-                catch (SjavacException e){
-                    failedInnerLines++;
-                    System.err.println("INNER SCOPE FAIL in line: " + (lineNum2 + entry.getValue().getStartLine()) + ": " + e.getClass());
-                }
-
-            }
-        }
-        /*********************************************************/
-        System.out.println("***************************************\n\t\t\tTotal lines: " + lineNum +
-                "\n\t\t\tValid lines: " + (lineNum - failedTests) + "\n\t\t\tInvalid lines: " + failedTests +
-                "\nInner lines failed: " + failedInnerLines +
-                " from total of " + innerLines + "\n***************************************\n");
     }
 
     /**
@@ -272,10 +201,11 @@ public class Verifier {
 
                 if (!assignee.equals("")) { //calling param is a value
                     var funcParameter = calledFunction.getFunctionParameters().get(i);
-                    validateAssignment(
-                            new String[]{funcParameter.getName(), params[i]}, funcParameter.getType(), true);
+                    validateAssignment(new String[]{funcParameter.getName(), params[i]},
+                            funcParameter.getType(), true);
                 }
-                else matchFunctionCallParameter(calledFunction, i, params, line); //calling param is another param
+                //if the calling parameter is another param
+                else matchFunctionCallParameter(calledFunction, i, params, line);
             }
         }
     }
@@ -295,6 +225,7 @@ public class Verifier {
         for (int curScopeIndex = scopes.size() - 1; curScopeIndex >= 0; --curScopeIndex) {
             var param = scopes.get(curScopeIndex).getVariablesMap().get(params[paramNum]);
             if (param != null) {
+
                 var assigned = function.getFunctionParameters().get(paramNum);
                 if (!param.getIsAssigned())
                     throw new UninitializedVariableUseException(param.getName());
@@ -401,13 +332,14 @@ public class Verifier {
 
         if (type.equals(INT) || type.equals(DOUBLE) || type.equals(BOOLEAN)){
             if (varLine.contains(",,") || varLine.contains(",;")) throw new ExtraCommasException(varLine);
+
             varFragments = varLine.replaceFirst("^\\s*", "")
                     .replaceAll("[,;=\\s]+", " ").split("\\s+");
         }
         else if (type.equals(CHAR) || type.equals(STRING)){
             varFragments = varLine.replaceFirst("^\\s*", "").split("=");
-
             varFragments[0] = varFragments[0].replaceAll("[,;\\s]", "");
+
             if (varFragments.length == 2) {
                 varFragments[1] = varFragments[1].trim().replaceAll("[,;]+$", "");
             }
@@ -452,9 +384,8 @@ public class Verifier {
      * @param assignedType type of assigned variable
      * @param fromWithin whether this function was called from an inner scope, or from the global scope
      * @return true if assignment succeeded, false otherwise
-     * @throws FinalVariableException if tried to assign into a final variable
-     * @throws TypeValueMismatchException if assignee type could not be assigned into assigned variable
-     * @throws VariableNotFoundException if either the assigned or assignee variables wre not found
+     * @throws VariableException if either tried to assign into a final variable, or assignee type could
+     * not be assigned into assigned variable, or the assigned or assignee variables wre not found
      */
     private boolean validateAssignment(String[] varFragments, String assignedType, boolean fromWithin)
             throws VariableException {
@@ -467,7 +398,7 @@ public class Verifier {
             if (assignedType.equals("") && scopeVariables.containsKey(assigned)) //check first var in scope
                 assignedType = scopeVariables.get(assigned).getType();
 
-            if (assigneeType.equals("") && scopeVariables.containsKey(assignee)) { //check second var in scope
+            if (assigneeType.equals("") && scopeVariables.containsKey(assignee)) { //check second var
                 var assigneeVariable = scopeVariables.get(assignee);
                 assigneeType = assigneeVariable.getType();
                 if(!assigneeVariable.getIsAssigned()) throw new UninitializedVariableUseException(assignee);
@@ -535,15 +466,18 @@ public class Verifier {
         while (variableNameMatcher.find()){
             var variableName = variableNameMatcher.group().trim();
             if (variableName.equals(TRUE) || variableName.equals(FALSE)) continue;
+
             boolean found = false;
 
             for (int i = scopes.size() - 1; i >= 0; --i){
                 var variable= scopes.get(i).getVariablesMap().get(variableName);
                 if (variable != null){
                     if(!variable.getIsAssigned()) throw new UninitializedVariableUseException(variableName);
+
                     var type = variable.getType();
                     if(!type.equals(BOOLEAN) && !type.equals(DOUBLE) && !type.equals(INT))
                         throw new WrongIfWhileArgumentException(variableName);
+
                     found = true;
                     break;
                 }
@@ -573,7 +507,7 @@ public class Verifier {
             case FUNCTION: //validate line logic, then save function and move to end of function
                 lineNumber = saveFunctionReference(line, lineNumber);
                 break;
-            default: throw new BadLineException(line);
+            default: throw new BadLineException(line); //only lines above allowed in global scope
         }
         return lineNumber;
     }
@@ -588,30 +522,30 @@ public class Verifier {
      */
     private int innerScopesFactory(String line, int lineNumber, int lastReturnLine) throws SjavacException {
         switch (parser.parseLineType(line)) {
-            case IF_WHILE:
+            case IF_WHILE: //add the if/while scope and verify its inner logic
                 scopes.add(new Scope());
                 verifyIfWhileLine(line);
                 break;
-            case VARIABLE:
+            case VARIABLE: // validate line logic and save variables in this line
                 extractVariables(line, true);
                 break;
-            case FUNCTION_CALL:
+            case FUNCTION_CALL: //validate call logic
                 verifyFunctionCall(line);
                 break;
-            case RETURN:
+            case RETURN: //update the last return line
                 lastReturnLine = lineNumber;
                 break;
-            case END_OF_SCOPE:
+            case END_OF_SCOPE: //check if its last scope, and act accordingly
                 scopes.remove(scopes.size() - 1); //remove current scope
                 if (scopes.size() != 1) break;
                 //if last scope closed, check that previous line is 'return;'
                 if (lastReturnLine == lineNumber - 1) return FUNCTION_END_CUE;
                 else throw new NoReturnException(lineNumber - 1);
-            case POSSIBLE_ASSIGN:
+            case POSSIBLE_ASSIGN: //validate line logic
                 checkAssignmentForLine(line, true);
                 break;
-            case FUNCTION: throw new InnerFunctionDeclarationException(lineNumber);
-            case UNRECOGNIZED: throw new BadLineException(line);
+            case FUNCTION: throw new InnerFunctionDeclarationException(lineNumber); //cant declare inner func
+            case UNRECOGNIZED: throw new BadLineException(line); //only lines above allowed in inner scopes
         }
         return lastReturnLine;
     }

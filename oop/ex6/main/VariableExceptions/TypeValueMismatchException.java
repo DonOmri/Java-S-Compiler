@@ -1,7 +1,7 @@
 package oop.ex6.main.VariableExceptions;
 
 public class TypeValueMismatchException extends VariableException {
-    private static final String TypeValueMismatchMsg = "TypeValueMismatchException:\ncould not assign " +
+    private static final String TypeValueMismatchMsg = "TypeValueMismatchException: could not assign " +
             "value to variable. (variable is ";
 
     public TypeValueMismatchException(String[] varFragments){
