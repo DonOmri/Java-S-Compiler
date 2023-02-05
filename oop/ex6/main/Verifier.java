@@ -185,7 +185,7 @@ class Verifier {
             var nameAndVariables = functionCallMatcher.group().
                     replaceAll("^\\s*|(\\s*\\)\\s*;\\s*)$" ,"").split("\\(", 2);
 
-            Function calledFunction = functions.get(nameAndVariables[0]);
+            Function calledFunction = functions.get(nameAndVariables[0].trim());
             if (calledFunction == null) throw new NoFunctionException(line);
 
             String[] params = nameAndVariables[1].trim().split(",");
