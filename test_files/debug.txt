@@ -1,9 +1,0 @@
-int a;
-void f0(){
-    a = 5;
-    return;
-}
-void f1(){
-    int b = a;
-    return;
-}

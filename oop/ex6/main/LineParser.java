@@ -46,7 +46,7 @@ public class LineParser {
      * ifWhileLineRegex
      **/
     private static final String IF_WHILE_CONDITION = "(?:(?:" + BOOLEAN_VALUE + ")|(?:" + VARIABLE_NAME +
-            "(?:\\s*(?:==|!=)\\s* " + GENERAL_VARIABLE_VALUE + ")?))\\s*";
+             "))\\s*";
     private static final String AND_OR_CONDITION = "\\s*(\\|\\||&&)\\s*";
     private static final String IF_WHILE_START = "\\s*(?:if|while)\\s*\\(\\s*";
     private static final String IF_WHILE_END = "\\s*\\)\\s*\\{\\s*";
@@ -93,8 +93,9 @@ public class LineParser {
     private final Pattern booleanValuePattern;
     private final Pattern doubleValuePattern;
     private final Pattern intValuePattern;
-    private final Pattern functionLineForVariables;
-    private final Pattern nonBooleanValue;
+    private final Pattern functionLineForVariablesPattern;
+    private final Pattern nonBooleanValuePattern;
+    private final Pattern variableNamePattern;
     private static final Pattern variableTypePattern = Pattern.compile(VARIABLE_NAME);
 
     /**
@@ -119,8 +120,9 @@ public class LineParser {
         intValuePattern = Pattern.compile(INT_VALUE);
         stringValuePattern = Pattern.compile(STRING_VALUE);
         charValuePattern = Pattern.compile(CHAR_VALUE);
-        functionLineForVariables = Pattern.compile(FUNCTION_LINE_FOR_VARIABLES);
-        nonBooleanValue = Pattern.compile(NON_BOOLEAN_VALUE);
+        functionLineForVariablesPattern = Pattern.compile(FUNCTION_LINE_FOR_VARIABLES);
+        nonBooleanValuePattern = Pattern.compile(NON_BOOLEAN_VALUE);
+        variableNamePattern = Pattern.compile(VARIABLE_NAME);
     }
 
     /**
@@ -133,7 +135,7 @@ public class LineParser {
             else if (commentLinePattern.matcher(line).matches()) return LineType.COMMENT;
             else if (emptyLinePattern.matcher(line).matches()) return LineType.EMPTY;
             else if (ifWhileLinePattern.matcher(line).matches()) return LineType.IF_WHILE;
-            else if (variableLinePattern.matcher(line).matches() && !nonBooleanValue.matcher(line).find())
+            else if (variableLinePattern.matcher(line).matches() && !nonBooleanValuePattern.matcher(line).find())
                 return LineType.VARIABLE;
             else if (functionCallLinePattern.matcher(line).matches()) return LineType.FUNCTION_CALL;
             else if (returnLinePattern.matcher(line).matches()) return LineType.RETURN;
@@ -165,8 +167,9 @@ public class LineParser {
     public Pattern getIntValuesPattern() {return intValuePattern;}
     public Pattern getStringValuesPattern() {return stringValuePattern;}
     public Pattern getCharValuesPattern() {return charValuePattern;}
-    public Pattern getFunctionLinePattern() {return functionLineForVariables;}
+    public Pattern getFunctionLinePattern() {return functionLineForVariablesPattern;}
     public Pattern getFunctionCallLinePattern() {return functionCallLinePattern;}
+    public Pattern getVariableNamePattern() {return variableNamePattern;}
     public static String[] getVariableRegexes(){
         return new String[]{INT_VALUE, DOUBLE_VALUE, BOOLEAN_VALUE, STRING_VALUE, CHAR_VALUE};
     }

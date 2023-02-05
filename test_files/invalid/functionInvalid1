@@ -1,0 +1,16 @@
+void ifWhileWithFakeParams(){
+    String z0 = "hey";
+    char z1 = 'w';
+    if (z0){
+    while(z0){
+    if (z1){
+    while(z1){
+    if (z01){
+    while(z01){
+    if (z0 && z1){
+    while(z0 && z1){
+    if (z0 || z1){
+    while(z0 || z1){
+    }}}}}}}}}}
+    return;
+}

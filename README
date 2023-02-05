@@ -55,12 +55,14 @@ Design & non trivial decisions:
                 NoFunctionException.java
                 NoReturnException.java
                 UnendingFunctionException.java
+                WrongIfWhileArgumentException.java
             VariableExceptions:
                 DoubleVariableDeclarationException.java
                 ExtraCommasException.java
                 FinalVariableException.java
                 NoVariableTypeException.java
                 TypeValueMismatchException.java
+                UninitializedVariableUseException.java
                 VariableException.java
                 VariableNotFoundException.java
             BadLineException.java

@@ -56,7 +56,6 @@ public class Verifier {
         this.parser = new LineParser();
 
         verifyGlobalScope();
-        System.out.println("GLOBAL SCOPE VERIFIED"); //todo DELETE
         verifyInnerScopes(); //verifies internal function lines
 
         printAllVariables();
@@ -289,13 +288,17 @@ public class Verifier {
      * @param line the current line as string
      * @throws CallParametersTypeException if there was a type mismatch in the call
      * @throws VariableNotFoundException if the parameter is a variable that was never declared
+     * @throws UninitializedVariableUseException if called to a function with uninitialized variable
      */
     private void matchFunctionCallParameter(Function function, int paramNum, String[] params, String line)
-            throws CallParametersTypeException, VariableNotFoundException{
+            throws CallParametersTypeException, VariableNotFoundException, UninitializedVariableUseException{
         for (int curScopeIndex = scopes.size() - 1; curScopeIndex >= 0; --curScopeIndex) {
-            Variable param;
-            if ((param = scopes.get(curScopeIndex).getVariablesMap().get(params[paramNum])) != null) {
-                if(!function.getFunctionParameters().get(paramNum).assign(param))
+            var param = scopes.get(curScopeIndex).getVariablesMap().get(params[paramNum]);
+            if (param != null) {
+                var assigned = function.getFunctionParameters().get(paramNum);
+                if (!param.getIsAssigned())
+                    throw new UninitializedVariableUseException(param.getName());
+                if(!assigned.assign(param))
                     throw new CallParametersTypeException(line);
                 return;
             }
@@ -318,6 +321,7 @@ public class Verifier {
     /**
      * extracts new variables from a declaration line
      * @param line a syntax-wise validated line
+     * @param fromWithin whether this function was called from an inner scope, or from the global scope
      * @throws VariableException if there was a problem assigning value to a variable
      */
     private void extractVariables(String line, boolean fromWithin)
@@ -359,6 +363,7 @@ public class Verifier {
      * @param varMatcher the matcher that detects variables
      * @param isFinal whether the variable final or not
      * @param type type of the variable
+     * @param fromWithin whether this function was called from an inner scope, or from the global scope
      * @throws VariableException if there was a problem creating a variable
      */
     private void extractSingleVariable(Matcher varMatcher, boolean isFinal, String type, boolean fromWithin)
@@ -423,6 +428,7 @@ public class Verifier {
     /**
      * Checks assignment for an assignment line
      * @param line a line to check
+     * @param fromWithin whether this function was called from an inner scope, or from the global scope
      */
     private void checkAssignmentForLine(String line, boolean fromWithin)
             throws VariableException, BadLineException {
@@ -444,6 +450,7 @@ public class Verifier {
      * Checks assignment for one variable
      * @param varFragments assigned and assignee names
      * @param assignedType type of assigned variable
+     * @param fromWithin whether this function was called from an inner scope, or from the global scope
      * @return true if assignment succeeded, false otherwise
      * @throws FinalVariableException if tried to assign into a final variable
      * @throws TypeValueMismatchException if assignee type could not be assigned into assigned variable
@@ -463,7 +470,7 @@ public class Verifier {
             if (assigneeType.equals("") && scopeVariables.containsKey(assignee)) { //check second var in scope
                 var assigneeVariable = scopeVariables.get(assignee);
                 assigneeType = assigneeVariable.getType();
-                if(!assigneeVariable.getIsAssigned()) throw new UninitializedVariableUse(assigned, assignee);
+                if(!assigneeVariable.getIsAssigned()) throw new UninitializedVariableUseException(assignee);
             }
 
             if (!assignedType.equals("") && !assigneeType.equals("") &&
@@ -514,6 +521,38 @@ public class Verifier {
     }
 
     /**
+     * Verifies correct syntax of an if / while line
+     * @param line the line itself to verify
+     * @throws UninitializedVariableUseException if tried to use an uninitialized variable in the line
+     * @throws VariableNotFoundException if tried to use a variable that doesn't exist in the line
+     * @throws WrongIfWhileArgumentException if the variable type isn't either boolean, double or int
+     */
+    private void verifyIfWhileLine(String line) throws UninitializedVariableUseException,
+            VariableNotFoundException, WrongIfWhileArgumentException {
+        Matcher variableNameMatcher = parser.getVariableNamePattern().matcher(
+                line.replaceFirst("\\s*(if|while)", ""));
+
+        while (variableNameMatcher.find()){
+            var variableName = variableNameMatcher.group().trim();
+            if (variableName.equals(TRUE) || variableName.equals(FALSE)) continue;
+            boolean found = false;
+
+            for (int i = scopes.size() - 1; i >= 0; --i){
+                var variable= scopes.get(i).getVariablesMap().get(variableName);
+                if (variable != null){
+                    if(!variable.getIsAssigned()) throw new UninitializedVariableUseException(variableName);
+                    var type = variable.getType();
+                    if(!type.equals(BOOLEAN) && !type.equals(DOUBLE) && !type.equals(INT))
+                        throw new WrongIfWhileArgumentException(variableName);
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) throw new VariableNotFoundException(variableName);
+        }
+    }
+
+    /**
      * Decides what to do in a given line in the global scope, based on parsing results
      * @param line the line as string
      * @param lineNumber the number of the line
@@ -551,6 +590,7 @@ public class Verifier {
         switch (parser.parseLineType(line)) {
             case IF_WHILE:
                 scopes.add(new Scope());
+                verifyIfWhileLine(line);
                 break;
             case VARIABLE:
                 extractVariables(line, true);

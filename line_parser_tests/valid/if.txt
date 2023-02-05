@@ -1,4 +1,0 @@
-if( a ){
- if( true) {
-if(a  &&  true) {
-if (a  || false) {

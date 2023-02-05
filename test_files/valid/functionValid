@@ -71,66 +71,66 @@ void f6(){
 
     int a = 0, b = 5, c=0;
 
-    if(a == b){
+    if(5){
         c = 2;
         b = 3;
     }
-    while(a == b){
+    while(-3 && true){
             c = 2;
         b = 2;
         }
-    if(a != b){
+    if(a || b){
             c = 2;
             b = 3;
         }
-        while(a != b){
+        while(a && b){
                 c = 2;
             b = 1;
             }
-    if(c == true){
+    if(true || true){
         c = 4;
     }
-    if(c == false){
+    if(false && false){
             c = 1;
         }
-    while(c == true){
+    while(-0.000 || true){
             c = -4;
         }
-    while(c == false){
+    while(false && 12356){
             c = 00;
         }
     return;
 }
 
 void f7(){
-    if(b ==  5.5){
-        if(b != 5.3){
+    if(b || 5.5){
+        if(b && 5.3){
             int zzz = 3;
-            if(zzz== 2){
+            if(false && 2){
                 zzz = 1;
             }
         }
     }
-    if(a == 5){
-        if( c == false){
+    if(a || 5){
+        if( c && false){
             int c = 4;
-            if (c == 4){
+            if (c || 4){
                 return;
             }
         }
     }
-    while(b ==  5.5){
-            if (b != 5.3){
+    while(b &&  5.5){
+            if (b || 5.3){
                 int zzz = 3;
-                if(zzz== 2){
+                if(zzz &&2){
                     zzz = 1;
                 }
             }
         }
-    while(a == 5){
-        if( c == false){
+    while(a || 5){
+        if( c || false && true && true && true){
             int c = 4;
-            if (c == 4){
+            if (c || 4){
                 return;
             }
         }
@@ -143,9 +143,9 @@ void f8(){
     double b = 12;
     String c = " hey";
 
-        if(a == 5 && b != 12 && c != 124 || a != 0 || b== 235){
+        if(a || 5 && b && true || 124 || a && 0 || b&& 235){
             int c = 6;
-            while (c != "hwety" && b == 124 || a != 5){
+            while (b && 124 || a && 5){
                 double a = 3;
             }
         }
@@ -153,7 +153,7 @@ void f8(){
 }
 
 void f9(){
-    if(a && b != 123){
+    if(a && b && 123){
         return;
     }
     return;
@@ -168,12 +168,12 @@ int a= 5;
 double b = 12;
 String c = " hey";
 
-    if(a == 5 && b != 12){
+    if(a || 5 && b && 12){
         int c = 6;
-        while (c != "hwety" && b == 124 || a != 5){
+        while (c && b || 124 || a && 5){
             double a = 3;
         }
-        if(a && b!= 123){
+        if(a && b&& 123){
             return;
         }
     }

@@ -40,19 +40,21 @@ public class Tester {
             "valid/assignment/doubleValidAssignment",
             "valid/assignment/booleanValidAssignment",
             "valid/assignment/StringValidAssignment",
-            "valid/assignment/charValidAssignment",
+            "valid/assignment/charValidAssignment"
     };
 
     private static final String[] funcFiles = new String[]{
-//            "invalid/functionInvalidCall",
-            "valid/functionValid",
+            "invalid/functionInvalidCall",
+            "invalid/functionInvalid1",
+            "invalid/functionInvalid2",
+            "valid/functionValid"
 
     };
 
 
     public static void main(String[] args)
     {
-//        for(var file : files) mainHelper(file);
+        for(var file : files) mainHelper(file);
         for (var file : funcFiles) mainHelper(file);
     }
 
